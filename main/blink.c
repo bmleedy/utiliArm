@@ -12,10 +12,10 @@
 /* Can run 'make menuconfig' to choose the GPIO to blink,
    or you can edit the following line and set a number here.
 */
-#define STEPPER_STEP_PIN 5
-#define STEPPER_DIRECTION_PIN 6
-#define STEP_PERIOD_MS 10
-#define STEPS_TO_SWEEP 50
+#define STEPPER_STEP_PIN 27
+#define STEPPER_DIRECTION_PIN 26
+#define STEP_PERIOD_MS 25
+#define STEPS_TO_SWEEP 400
 
 void blink_task(void *pvParameter)
 {
@@ -49,16 +49,16 @@ void blink_task(void *pvParameter)
     // Step STEPS_TO_SWEEP times
     for( int i=0; i < STEPS_TO_SWEEP; i++){
       //go high for 1 ms
-      gpio_set_level(BLINK_GPIO, 1);
+      gpio_set_level(STEPPER_STEP_PIN, 1);
       vTaskDelay(1 / portTICK_PERIOD_MS);
 
       //go low for the remainder of the period
-      gpio_set_level(BLINK_GPIO, 0);
+      gpio_set_level(STEPPER_STEP_PIN, 0);
       vTaskDelay((STEP_PERIOD_MS - 1) / portTICK_PERIOD_MS);
     }
 
     // Reverse direction state
-    direction_state != direction_state;
+    direction_state = !direction_state;
 
   }
 }
