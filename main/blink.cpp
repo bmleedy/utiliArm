@@ -19,10 +19,11 @@
 #define STEP_PERIOD_MS 25
 #define STEPS_TO_SWEEP 400
 
-#define SERVO_OUTPUT_PIN GPIO_NUM_5
-#define SERVO_SWEEP_DEGREES 30
+#define SERVO_OUTPUT_PIN GPIO_NUM_17
+#define SERVO_SWEEP_DEGREES 100
+#define SERVO_OFFSET 90
 
-void blink_task(void *pvParameter)
+void motion_test_task(void *pvParameter)
 {
   // Configure the GPIO pin for the servo
   servoControl myServo;
@@ -30,9 +31,6 @@ void blink_task(void *pvParameter)
   //Defaults: myServo.attach(pin, 400, 2600, LEDC_CHANNEL_0, LEDC_TIMER0);
   // to use more servo set a valid ledc channel and timer
   myServo.write(0);  // sero out the servo
-
-
-
 
 
   
@@ -64,7 +62,7 @@ void blink_task(void *pvParameter)
     gpio_set_level(STEPPER_DIRECTION_PIN, direction_state);
 
     // Command the servo
-    myServo.write(servo_command);
+    myServo.write(servo_command+SERVO_OFFSET);
     
     // Step STEPS_TO_SWEEP times
     for( int i=0; i < STEPS_TO_SWEEP; i++){
@@ -80,10 +78,11 @@ void blink_task(void *pvParameter)
     // Reverse direction state
     direction_state = !direction_state;
     servo_command = -servo_command;
+    printf("Reversing Servo Direction........%d\n",servo_command);
   }
 }
 
 extern "C" void app_main()
 {
-    xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
+    xTaskCreate(&motion_test_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 }
