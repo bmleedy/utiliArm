@@ -9,6 +9,14 @@
 #include "driver/gpio.h"
 #include "sdkconfig.h"
 
+#include "esp_wifi.h"
+#include "esp_system.h"
+#include "esp_event.h"
+#include "esp_event_loop.h"
+#include "nvs_flash.h"
+
+#include "string.h"
+
 #include "servoControl.h"
 
 /* Can run 'make menuconfig' to choose the GPIO to blink,
@@ -22,6 +30,32 @@
 #define SERVO_OUTPUT_PIN GPIO_NUM_17
 #define SERVO_SWEEP_DEGREES 100
 #define SERVO_OFFSET 90
+
+esp_err_t event_handler(void *ctx, system_event_t *event)
+{
+    return ESP_OK;
+}
+
+void initialize_wifi()
+{
+  nvs_flash_init();
+  tcpip_adapter_init();
+  ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
+  ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
+  ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
+  //create station config
+  wifi_config_t sta_config;
+
+  strncpy((char *)sta_config.sta.ssid,CONFIG_ESP_WIFI_SSID,32);
+  strncpy((char *)sta_config.sta.password,CONFIG_ESP_WIFI_PASSWORD,32);
+  sta_config.sta.bssid_set = false;
+  ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &sta_config) );
+  ESP_ERROR_CHECK( esp_wifi_start() );
+  ESP_ERROR_CHECK( esp_wifi_connect() );
+}
+
 
 void motion_test_task(void *pvParameter)
 {
