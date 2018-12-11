@@ -57,23 +57,48 @@ void initialize_wifi()
 }
 
 
+void print_ip_address(){    
+  uint32_t ulIPAddress, ulNetMask, ulGatewayAddress, ulDNSServerAddress;
+  int8_t cBuffer[ 16 ];
+  
+  FreeRTOS_GetAddressConfiguration( &ulIPAddress,
+				    &ulNetMask,
+				    &ulGatewayAddress,
+				    &ulDNSServerAddress );
+  
+  /* Convert the IP address to a string then print it out. */
+  FreeRTOS_inet_ntoa( ulIPAddress, cBuffer );
+  printf( "IP Address: %s\r\n", cBuffer );
+  
+  /* Convert the net mask to a string then print it out. */
+  FreeRTOS_inet_ntoa( ulNetMask, cBuffer );
+  printf( "Subnet Mask: %s\r\n", cBuffer );
+  
+  /* Convert the IP address of the gateway to a string then print it out. */
+  FreeRTOS_inet_ntoa( ulGatewayAddress, cBuffer );
+  printf( "Gateway IP Address: %s\r\n", cBuffer );
+  
+  /* Convert the IP address of the DNS server to a string then print it out. */
+  FreeRTOS_inet_ntoa( ulDNSServerAddress, cBuffer );
+  printf( "DNS server IP Address: %s\r\n", cBuffer );
+}
+
+
+
+
 void motion_test_task(void *pvParameter)
 {
+
+  // initialize network
+  initialize_wifi();
+  network_config my_netconfig;
+
   // Configure the GPIO pin for the servo
   servoControl myServo;
   myServo.attach(SERVO_OUTPUT_PIN);
   //Defaults: myServo.attach(pin, 400, 2600, LEDC_CHANNEL_0, LEDC_TIMER0);
   // to use more servo set a valid ledc channel and timer
-  myServo.write(0);  // sero out the servo
-
-
-  
-  /* Configure the IOMUX register for pad BLINK_GPIO (some pads are
-     muxed to GPIO on reset already, but some default to other
-     functions and need to be switched to GPIO. Consult the
-     Technical Reference for a list of pads and their default
-     functions.)
-  */
+  myServo.write(0);  // zero out the servo
 
   //initialize state for the step pin and the direction
   bool direction_state = false;
@@ -87,10 +112,9 @@ void motion_test_task(void *pvParameter)
   gpio_set_direction(STEPPER_STEP_PIN, GPIO_MODE_OUTPUT);
   gpio_set_direction(STEPPER_DIRECTION_PIN, GPIO_MODE_OUTPUT);
 
-
   while(1) {
 
-    //todo: crash or failu build if STEP_PERIOD_MS is <= 1.
+    //todo: crash or fail to build if STEP_PERIOD_MS is <= 1.
 
     // Set direction pin
     gpio_set_level(STEPPER_DIRECTION_PIN, direction_state);
@@ -113,10 +137,16 @@ void motion_test_task(void *pvParameter)
     direction_state = !direction_state;
     servo_command = -servo_command;
     printf("Reversing Servo Direction........%d\n",servo_command);
+
+    // Print my IP Address
+    print_ip_address();
+
   }
 }
 
+
+
 extern "C" void app_main()
 {
-    xTaskCreate(&motion_test_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
+    xTaskCreate(&motion_test_task, "motion_test", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 }
