@@ -10,7 +10,6 @@ addons:
       - wget
       - make
       - libncurses-dev
-      - libncurses-devel
       - flex
       - bison
       - gperf
