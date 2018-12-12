@@ -3,6 +3,13 @@ language: bash
 os:
   - linux
 
+notifications:
+  email:
+    recipients:
+      - bmleedy@gmail.com
+    on_success: never # default: change
+    on_failure: always # default: always
+
 # Blacklist
 branches:
   except:
