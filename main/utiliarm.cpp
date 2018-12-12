@@ -212,7 +212,8 @@ void motion_test_task(void *pvParameter)
     direction_state = !direction_state;
     servo_command = -servo_command;
     printf("Reversing Servo Direction........%d\n",servo_command);
-
+    ESP_LOGI(TAG, "Motion Task stack high water mark: %d (32-bit words)",
+	     xTaskGetStackHighWaterMark( NULL ));
   }
 }
 
