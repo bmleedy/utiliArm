@@ -1,5 +1,6 @@
-# Blink Example
+# UtiliArm
 
-Starts a FreeRTOS task to blink an LED
+FreeRTOS code for ESP-IDF to control my personal robotic arm.
 
-See the README.md file in the upper level 'examples' directory for more information about examples.
+See documentation here: https://bmleedy.github.io/utiliArm/index.html
+
