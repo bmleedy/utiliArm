@@ -6,16 +6,28 @@ os:
 addons:
   apt:
     packages:
+      - git
+      - wget
+      - make
+      - libncurses-dev
+      - libncurses-devel
+      - flex
+      - bison
       - gperf
       - python
       - python-serial
+#      - virtualenv
 
 before_install:
   # Save path to the git respository
   - PROJECT_PATH=$(pwd)
 
 install:
-  - pip install pyserial future cryptography pyparsing
+  - pip install --upgrade pip
+#  - pip install virtualenv
+#  - virtualenv .venv
+#  - source .venv/bin/activate
+#  - pip install pyserial future cryptography pyparsing
 
   # Install ESP32 toochain following steps as desribed
   # in http://esp-idf.readthedocs.io/en/latest/linux-setup.html
@@ -26,8 +38,9 @@ install:
   - mkdir -p ~/esp
   - cd ~/esp
   # Download binary toolchain for the ESP32
-  - wget https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz
-  - tar -xzf xtensa-esp32-elf-linux64-1.22.0-61-gab8375a-5.2.0.tar.gz
+  # todo: can I 
+  - wget https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-73-ge28a011-5.2.0.tar.gz
+  - tar -xzf xtensa-esp32-elf-linux64-1.22.0-73-ge28a011-5.2.0.tar.gz
   # Make xtensa-esp32-elf available for all terminal sessions
   - export PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin
   # Get ESP-IDF from github
