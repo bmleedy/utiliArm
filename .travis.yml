@@ -21,14 +21,6 @@ before_install:
   - PROJECT_PATH=$(pwd)
 
 install:
-#  - pip install --upgrade pip
-#  - pip install virtualenv
-#  - virtualenv .venv
-#  - source .venv/bin/activate
-#  - pip install pyserial future cryptography pyparsing
-
-  - /usr/bin/python -m pip install --user -r /home/travis/esp/esp-idf/requirements.txt
-
   # Install ESP32 toochain following steps as desribed
   # in http://esp-idf.readthedocs.io/en/latest/linux-setup.html
   #
@@ -47,6 +39,9 @@ install:
   - git clone --recursive https://github.com/espressif/esp-idf.git
   # Set the path to ESP-IDF directory
   - export IDF_PATH=~/esp/esp-idf
+  # Install python requirements for the idf
+  - /usr/bin/python -m pip install --user -r /home/travis/esp/esp-idf/requirements.txt
+
 
 script:
   # Go back to the git repository
