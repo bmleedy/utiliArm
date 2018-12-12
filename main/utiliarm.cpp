@@ -18,9 +18,7 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-#include "servoControl.h"  //todo: reenable me
-
-
+#include "servoControl.h"
 
 // Stepper test constants
 #define STEPPER_STEP_PIN GPIO_NUM_27
@@ -146,17 +144,15 @@ void motion_test_task(void *pvParameter)
   gpio_set_direction(STEPPER_DIRECTION_PIN, GPIO_MODE_OUTPUT);
 
 
-  /*
-  while(0) { //todo: re-enable
+  
+  while(1) {
 
     //todo: crash or fail to build if STEP_PERIOD_MS is <= 1.
 
     // Set direction pin
-	printf("level set\n");
     gpio_set_level(STEPPER_DIRECTION_PIN, direction_state);
 
     // Command the servo
-    printf("servo write\n");
     myServo.write(servo_command+SERVO_OFFSET);
     
     // Step STEPS_TO_SWEEP times
@@ -176,15 +172,7 @@ void motion_test_task(void *pvParameter)
     printf("Reversing Servo Direction........%d\n",servo_command);
 
   }
-*/
-  //todo
-	while(1){
-		ESP_LOGI(TAG, "motion_test_task: creating servocontrol class...");
-		for(int i=0;i<10;i++){
-			ESP_LOGI(TAG, "doing some math %d", i);
-			vTaskDelay(100);
-		}
-	}
+
 }
 
 
@@ -203,12 +191,7 @@ extern "C" void app_main()
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     initialize_wifi();
 
-    ESP_LOGI(TAG, "Waiting a while");
-    vTaskDelay(1000);
-
-    // todo: the following line causes a crash
     ESP_LOGI(TAG, "Creating motor control test task. %p", &motion_test_task);
-
     //xTaskCreate(&motion_test_task, "motion_test", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
     xTaskCreate(&motion_test_task, "motion_test", 3000, NULL, 5, NULL);
 }
