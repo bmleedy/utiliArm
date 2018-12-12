@@ -27,6 +27,8 @@ install:
 #  - source .venv/bin/activate
 #  - pip install pyserial future cryptography pyparsing
 
+  - /usr/bin/python -m pip install --user -r /home/travis/esp/esp-idf/requirements.txt
+
   # Install ESP32 toochain following steps as desribed
   # in http://esp-idf.readthedocs.io/en/latest/linux-setup.html
   #
