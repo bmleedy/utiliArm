@@ -3,9 +3,22 @@ language: bash
 os:
   - linux
 
+# Blacklist
+branches:
+  except:
+    - gh-pages
+
+# Environment Variables (for doc generation)
+env:
+  global:
+    - GH_REPO_NAME: utiliArm
+    - DOXYFILE: $TRAVIS_BUILD_DIR/main/Doxyfile
+    - GH_REPO_REF: github.com/bmleedy/utiliArm.git
+
 addons:
   apt:
     packages:
+#esp-idf
       - git
       - wget
       - make
@@ -15,6 +28,12 @@ addons:
       - gperf
       - python
       - python-serial
+#doxygen
+      - doxygen
+      - doxygen-doc
+      - doxygen-latex
+      - doxygen-gui
+      - graphviz
 
 before_install:
   # Save path to the git respository
@@ -50,3 +69,9 @@ script:
   - make defconfig
   # Build project from the git repository
   - make
+
+# Generate and deploy documentation
+after_success:
+  - cd $TRAVIS_BUILD_DIR
+  - chmod +x generateDocumentationAndDeploy.sh
+  - ./generateDocumentationAndDeploy.sh
