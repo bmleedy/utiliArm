@@ -1,51 +1,82 @@
-/*
+/*!
+ * @file utiliarm.cpp
+ * 
+ * @mainpage Robotic Arm ESP32 code
+ * 
+ * @section intro_sed Introduction
+ * 
+ * This esp-idf code is used to control my personal robotic arm 
+ * with the ESP32 devkitC.
+ * 
+ * Built automatically: https://travis-ci.org/bmleedy/utiliArm
+ * GitHub README: https://github.com/bmleedy/utiliArm  
+ * 
+ * This code is a work in progress.
+ *
+ * @section dependencies Dependencies
+ * 
+ * - ESP IDF - https://dl.espressif.com/doc/esp-idf/latest/get-started/linux-setup.html 
+ * - ESP32Servo - https://github.com/ShellAddicted/ESP32Servo 
+ * 
+ * @section author Author
+ * 
+ * Written by Brett "bmleedy" Leedy for fun and profit.
+ * 
+ * @section license License
+ * 
+ */
 
-  Test code for robotic arm
+//! @todo adjust ESP stack size for child task.
 
-*/
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
-
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_event_loop.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
-
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
 #include "servoControl.h"
 
 // Stepper test constants
-#define STEPPER_STEP_PIN GPIO_NUM_27
-#define STEPPER_DIRECTION_PIN GPIO_NUM_26
-#define STEP_PERIOD_MS 25
-#define STEPS_TO_SWEEP 400
+#define STEPPER_STEP_PIN GPIO_NUM_27      ///<connected to controller step input
+#define STEPPER_DIRECTION_PIN GPIO_NUM_26 ///<connected to controller direction input  
+#define STEP_PERIOD_MS 25  ///<step every n milliseconds
+#define STEPS_TO_SWEEP 400 ///<go this many steps, then switch directions
 
 // Servo test constants
-#define SERVO_OUTPUT_PIN GPIO_NUM_17
-#define SERVO_SWEEP_DEGREES 100
-#define SERVO_OFFSET 90
+#define SERVO_OUTPUT_PIN GPIO_NUM_17 ///<connected to servo pulse input
+#define SERVO_SWEEP_DEGREES 100      ///<full width of servo sweep
+#define SERVO_OFFSET 90              ///<location of servo sweep center
 
-// FreeRTOS event group to signal when we are connected
+/*! @var s_wifi_event_group
+ * FreeRTOS event group to signal when we are connected */
 static EventGroupHandle_t s_wifi_event_group;
 
-/* The event group allows multiple bits for each event, but we only care about one event
- * - are we connected to the AP with an IP? */
+/* @var WIFI_CONNECTED_BIT
+ * event group bit for wifi connect */
 const int WIFI_CONNECTED_BIT = BIT0;
+/* @var TAG
+ * tag for this app's log entries */
 static const char *TAG = "wifi station";
+/* @var s_retry_num
+ * how many times have we retried connecting to wifi?*/
 static int s_retry_num = 0;
-ip_addr_t ip_Addr;
-ip4_addr_t ip;
-ip4_addr_t gw;
-ip4_addr_t msk;
-bool bConnected = false;
-bool bDNSFound = false;
 
+
+/*!
+ * @fn event_handler
+ * 
+ * @brief special function to handle freeRTOS system events
+ * 
+ * The switch statement in this function takes action when a system 
+ * event (like wifi connect or disconnect) occurs.
+ */
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
     switch(event->event_id) {
@@ -76,6 +107,14 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 }
 
 
+/*!
+ * @fn initialize_wifi
+ * 
+ * @brief Set up the wifi adaptor config
+ * 
+ * The intialize_wifi function handles all of the initialization
+ * needed to set the ESP32 up as a wifi station.
+ */
 void initialize_wifi()
 {
 	ESP_LOGI(TAG, "initialize_wifi(): tcpip_adapter_init...\n");
@@ -114,13 +153,19 @@ void initialize_wifi()
 }
 
 
-
+/*!
+ * @fn motion_test_task
+ * 
+ * @brief performs GPIO operations to sweep motors and servos
+ * 
+ * This function is spawned as a task to perform GPIO operations to make
+ * the servos sweep back and forth.
+ */
 void motion_test_task(void *pvParameter)
 {
   // Configure the GPIO pin for the servo
 	ESP_LOGI(TAG, "motion_test_task: creating servocontrol class...");
   servoControl myServo;
-
 
   //does this servo library conflict with the timer in use by the wifi adaptor?
   ESP_LOGI(TAG, "motion_test_task: attaching to servo...");
@@ -143,12 +188,9 @@ void motion_test_task(void *pvParameter)
   gpio_set_direction(STEPPER_STEP_PIN, GPIO_MODE_OUTPUT);
   gpio_set_direction(STEPPER_DIRECTION_PIN, GPIO_MODE_OUTPUT);
 
-
   
   while(1) {
-
-    //todo: crash or fail to build if STEP_PERIOD_MS is <= 1.
-
+    //! @todo crash or fail to build if STEP_PERIOD_MS is <= 1.
     // Set direction pin
     gpio_set_level(STEPPER_DIRECTION_PIN, direction_state);
 
@@ -172,11 +214,17 @@ void motion_test_task(void *pvParameter)
     printf("Reversing Servo Direction........%d\n",servo_command);
 
   }
-
 }
 
 
-
+/*!
+ * @fn app_main
+ * 
+ * @brief main app that spawns all application processes
+ * 
+ * This is the root application which calls all configuration
+ * and spawns all processes.
+ */
 extern "C" void app_main()
 {
     // Initialize NVS
