@@ -7,8 +7,8 @@ notifications:
   email:
     recipients:
       - bmleedy@gmail.com
-    on_success: never # default: change
-    on_failure: always # default: always
+    on_success: change # make "never" if annoying
+    on_failure: always
 
 # Blacklist
 branches:
@@ -50,8 +50,6 @@ install:
   # Install ESP32 toochain following steps as desribed
   # in http://esp-idf.readthedocs.io/en/latest/linux-setup.html
   #
-  # Get required packages - already done above, see addons: apt: packages:
-  # - sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial
   # Prepare directory for the toolchain
   - mkdir -p ~/esp
   - cd ~/esp
