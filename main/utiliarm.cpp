@@ -34,12 +34,12 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
-#include "esp32/include/esp_system.h"
-#include "esp32/include/esp_wifi.h"
-#include "esp32/include/esp_event.h"
-#include "esp32/include/esp_event_loop.h"
-#include "esp32/include/esp_log.h"
-#include "nvs_flash/include/nvs_flash.h"
+#include "esp_system.h"
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "esp_event_loop.h"
+#include "esp_log.h"
+#include "nvs_flash.h"
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
@@ -134,9 +134,9 @@ void initialize_wifi() {
   // create station config
   wifi_config_t sta_config;
   memset(&sta_config, 0, sizeof(sta_config));
-  strncpy(reinterpret_cast<char *>sta_config.sta.ssid,
+  strncpy(reinterpret_cast<char *>(sta_config.sta.ssid),
           CONFIG_ESP_WIFI_SSID, 32);
-  strncpy(reinterpret_cast<char *>sta_config.sta.password,
+  strncpy(reinterpret_cast<char *>(sta_config.sta.password),
           CONFIG_ESP_WIFI_PASSWORD, 32);
   sta_config.sta.bssid_set = false;
 
@@ -150,8 +150,8 @@ void initialize_wifi() {
   ESP_ERROR_CHECK(esp_wifi_connect() );
 
   ESP_LOGI(TAG, "initializew_wifi(): connect to ap SSID:%s password:%s",
-           reinterpret_cast<char *>sta_config.sta.ssid,
-           reinterpret_cast<char *>sta_config.sta.password);
+           reinterpret_cast<char *>(sta_config.sta.ssid),
+           reinterpret_cast<char *>(sta_config.sta.password));
 }
 
 
@@ -164,6 +164,8 @@ void initialize_wifi() {
  * the servos sweep back and forth.
  */
 void motion_test_task(void *pvParameter) {
+  int32_t hwm = 0;
+  
   // Configure the GPIO pin for the servo
   ESP_LOGI(TAG, "motion_test_task: creating servocontrol class...");
   servoControl myServo;
@@ -213,8 +215,8 @@ void motion_test_task(void *pvParameter) {
     direction_state = !direction_state;
     servo_command = -servo_command;
     printf("Reversing Servo Direction........%d\n", servo_command);
-    ESP_LOGI(TAG, "Motion Task stack high water mark: %d (32-bit words)",
-             xTaskGetStackHighWaterMark(NULL));
+    hwm = uxTaskGetStackHighWaterMark(NULL);
+    ESP_LOGI(TAG, "Motion Task stack high water mark: %d (32-bit words)", hwm);
   }
 }
 
