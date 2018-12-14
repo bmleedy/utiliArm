@@ -44,7 +44,6 @@
 #include "lwip/sys.h"
 
 #include "servoControl.h"
-#include "webserver.h"
 
 // Stepper test constants
 #define STEPPER_STEP_PIN GPIO_NUM_27       ///< controller step input
