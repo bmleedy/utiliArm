@@ -215,7 +215,7 @@ void motion_test_task(void *pvParameter) {
     // Reverse direction state
     direction_state = !direction_state;
     servo_command = -servo_command;
-    printf("Reversing Servo Direction........%d\n", servo_command);
+    ESP_LOGI(TAG, "Reversing Servo Direction........%d\n", servo_command);
     hwm = uxTaskGetStackHighWaterMark(NULL);
     ESP_LOGI(TAG, "Motion Task stack high water mark: %d (32-bit words)", hwm);
   }
@@ -248,5 +248,5 @@ extern "C" void app_main() {
     start_webserver();
     
     ESP_LOGI(TAG, "Creating motor control test task. %p", &motion_test_task);
-    xTaskCreate(&motion_test_task, "motion_test", 3000, NULL, 5, NULL);
+    xTaskCreate(&motion_test_task, "motion_test", 2000, NULL, 5, NULL);
 }
