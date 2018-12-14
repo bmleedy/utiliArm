@@ -244,6 +244,9 @@ extern "C" void app_main() {
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     initialize_wifi();
 
+    // Start the webserver
+    start_webserver();
+    
     ESP_LOGI(TAG, "Creating motor control test task. %p", &motion_test_task);
     xTaskCreate(&motion_test_task, "motion_test", 3000, NULL, 5, NULL);
 }
