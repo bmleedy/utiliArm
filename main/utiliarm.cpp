@@ -29,7 +29,6 @@
  */
 
 //! @todo adjust ESP stack size for child task.
-
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -45,6 +44,7 @@
 
 #include "servoControl.h"
 #include "webserver.h"
+#include "SharedKeyStore.h"
 
 // Stepper test constants
 #define STEPPER_STEP_PIN GPIO_NUM_27       ///< controller step input
@@ -71,7 +71,6 @@ static const char *TAG = "wifi station";
  * how many times have we retried connecting to wifi?*/
 static int s_retry_num = 0;
 
-
 /*!
  * @fn event_handler
  * 
@@ -81,33 +80,31 @@ static int s_retry_num = 0;
  * event (like wifi connect or disconnect) occurs.
  */
 static esp_err_t event_handler(void *ctx, system_event_t *event) {
-    switch (event->event_id) {
-    case SYSTEM_EVENT_STA_START:
-        esp_wifi_connect();
-        break;
-    case SYSTEM_EVENT_STA_GOT_IP:
-        ESP_LOGI(TAG, "got ip:%s",
-                 ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
-        s_retry_num = 0;
-        xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-        break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-        {
-            if (s_retry_num < 5) {
-                esp_wifi_connect();
-                xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-                s_retry_num++;
-                ESP_LOGI(TAG, "retry to connect to the AP");
-            }
-            ESP_LOGI(TAG, "connect to the AP fail\n");
-            break;
-        }
-    default:
-        break;
+  switch (event->event_id) {
+  case SYSTEM_EVENT_STA_START:
+    esp_wifi_connect();
+    break;
+  case SYSTEM_EVENT_STA_GOT_IP:
+    ESP_LOGI(TAG, "got ip:%s",
+        ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
+    s_retry_num = 0;
+    xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+    break;
+  case SYSTEM_EVENT_STA_DISCONNECTED: {
+    if (s_retry_num < 5) {
+      esp_wifi_connect();
+      xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+      s_retry_num++;
+      ESP_LOGI(TAG, "retry to connect to the AP");
     }
-    return ESP_OK;
+    ESP_LOGI(TAG, "connect to the AP fail\n");
+    break;
+  }
+  default:
+    break;
+  }
+  return ESP_OK;
 }
-
 
 /*!
  * @fn initialize_wifi
@@ -123,38 +120,37 @@ void initialize_wifi() {
   tcpip_adapter_init();
 
   ESP_LOGI(TAG, "initialize_wifi(): esp_event_loop_init...\n");
-  ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL) );
+  ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
 
   ESP_LOGI(TAG, "initialize_wifi(): wifi init\n");
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-  ESP_ERROR_CHECK(esp_wifi_init(&cfg) );
+  ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
   ESP_LOGI(TAG, "initialize_wifi(): wifi set mode\n");
-  ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
+  ESP_ERROR_CHECK (esp_wifi_set_mode(WIFI_MODE_STA) );
 
   // create station config
-  wifi_config_t sta_config;
+wifi_config_t  sta_config;
   memset(&sta_config, 0, sizeof(sta_config));
-  strncpy(reinterpret_cast<char *>(sta_config.sta.ssid),
-          CONFIG_ESP_WIFI_SSID, 32);
+  strncpy(reinterpret_cast<char *>(sta_config.sta.ssid), CONFIG_ESP_WIFI_SSID,
+      32);
   strncpy(reinterpret_cast<char *>(sta_config.sta.password),
-          CONFIG_ESP_WIFI_PASSWORD, 32);
+      CONFIG_ESP_WIFI_PASSWORD, 32);
   sta_config.sta.bssid_set = false;
 
   ESP_LOGI(TAG, "initialize_wifi(): wifi set config\n");
-  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config) );
+  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
 
   ESP_LOGI(TAG, "initialize_wifi(): wifi start\n");
-  ESP_ERROR_CHECK(esp_wifi_start() );
+  ESP_ERROR_CHECK (esp_wifi_start() );
 
-  ESP_LOGI(TAG, "wifi connect\n");
-  ESP_ERROR_CHECK(esp_wifi_connect() );
+ESP_LOGI  (TAG, "wifi connect\n");
+  ESP_ERROR_CHECK (esp_wifi_connect() );
 
-  ESP_LOGI(TAG, "initializew_wifi(): connect to ap SSID:%s password:%s",
-           reinterpret_cast<char *>(sta_config.sta.ssid),
-           reinterpret_cast<char *>(sta_config.sta.password));
+ESP_LOGI  (TAG, "initializew_wifi(): connect to ap SSID:%s password:%s",
+      reinterpret_cast<char *>(sta_config.sta.ssid),
+      reinterpret_cast<char *>(sta_config.sta.password));
 }
-
 
 /*!
  * @fn motion_test_task
@@ -166,7 +162,7 @@ void initialize_wifi() {
  */
 void motion_test_task(void *pvParameter) {
   int32_t hwm = 0;
-  
+
   // Configure the GPIO pin for the servo
   ESP_LOGI(TAG, "motion_test_task: creating servocontrol class...");
   servoControl myServo;
@@ -185,13 +181,12 @@ void motion_test_task(void *pvParameter) {
 
   // Select pad as a gpio function from IOMUX
   ESP_LOGI(TAG, "motion_test_task: setting gpio pad...");
-  gpio_pad_select_gpio(STEPPER_STEP_PIN);
-  gpio_pad_select_gpio(STEPPER_DIRECTION_PIN);
+  gpio_pad_select_gpio (STEPPER_STEP_PIN);
+  gpio_pad_select_gpio (STEPPER_DIRECTION_PIN);
 
   // Set the GPIO as a push/pull output
   gpio_set_direction(STEPPER_STEP_PIN, GPIO_MODE_OUTPUT);
   gpio_set_direction(STEPPER_DIRECTION_PIN, GPIO_MODE_OUTPUT);
-
 
   while (1) {
     //! @todo crash or fail to build if STEP_PERIOD_MS is <= 1.
@@ -221,7 +216,6 @@ void motion_test_task(void *pvParameter) {
   }
 }
 
-
 /*!
  * @fn app_main
  * 
@@ -231,22 +225,23 @@ void motion_test_task(void *pvParameter) {
  * and spawns all processes.
  */
 extern "C" void app_main() {
-    // Initialize NVS
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
-        ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-      ESP_ERROR_CHECK(nvs_flash_erase());
-      ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
+  SharedKeyStore * key_store = new SharedKeyStore(100);
+  
+  // Initialize NVS
+  esp_err_t ret = nvs_flash_init();
+  if (ret == ESP_ERR_NVS_NO_FREE_PAGES
+      || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    ESP_ERROR_CHECK (nvs_flash_erase());ret = nvs_flash_init();
+  }
+  ESP_ERROR_CHECK(ret);
 
-    // Start WIFI
-    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
-    initialize_wifi();
+  // Start WIFI
+  ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+  initialize_wifi();
 
-    // Start the webserver
-    start_webserver();
-    
-    ESP_LOGI(TAG, "Creating motor control test task. %p", &motion_test_task);
-    xTaskCreate(&motion_test_task, "motion_test", 2000, NULL, 5, NULL);
+  // Start the webserver
+  start_webserver();
+
+  ESP_LOGI(TAG, "Creating motor control test task. %p", &motion_test_task);
+  xTaskCreate(&motion_test_task, "motion_test", 2000, NULL, 5, NULL);
 }

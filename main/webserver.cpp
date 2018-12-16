@@ -13,6 +13,7 @@
 
 
 #include "webserver.h"
+#include "main_page.h"
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
@@ -21,8 +22,7 @@
 esp_err_t get_handler(httpd_req_t *req)
 {
     /* Send a simple response */
-    const char * resp = "URI GET Response";
-    httpd_resp_send(req, resp, strlen(resp));
+    httpd_resp_send(req, main_page_raw.c_str(), main_page_raw.length());
     return ESP_OK;
 }
 
