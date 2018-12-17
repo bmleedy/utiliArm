@@ -23,19 +23,54 @@ const std::string main_page_raw = R"(
   <style>#slider { margin: 10px; }  </style>
   <script src="//code.jquery.com/jquery-1.12.4.js"></script>
   <script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-</style>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <style>
+    .slidecontainer {
+      width: 100%;
+    }
+    
+    .slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 25px;
+      background: #d3d3d3;
+      outline: none;
+      opacity: 0.7;
+      -webkit-transition: .2s;
+      transition: opacity .2s;
+    }
+    
+    .slider:hover {
+      opacity: 1;
+    }
+  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 </head>
 <body>
 
 <h1>Custom Range Slider</h1>
 <p>Drag the slider to display the current value.</p>
 
-<div id="myslider"></div>
+<div class="slidecontainer">
+  <input type="range" min="0" max="180" value="90" class="slider" id="slider1">
+</div>
+<div>
+  <p id="state"><p>
+</div>
 
 
 <script>
-$( "#myslider" ).slider();
+  var slider = document.getElementById("slider1");
+  var output = document.getElementById("state");
+  slider.onclick = function() {
+    output.innerHTML = this.value;
+    $.post( "axes/first", { value: this.value } )
+      .done(function (data) {
+        //alert( "Data Loaded: " + data );
+      })
+      .fail(function(data) {
+        alert( "POST to the board failed with message: " + data );
+      });
+  };
 </script>
 
 </body>

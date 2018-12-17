@@ -61,7 +61,7 @@ esp_err_t post_handler(httpd_req_t *req)
 
 /* URI handler structure for GET /uri */
 httpd_uri_t uri_get = {
-    .uri      = "/uri",
+    .uri      = "/",
     .method   = HTTP_GET,
     .handler  = get_handler,
     .user_ctx = NULL
@@ -69,7 +69,7 @@ httpd_uri_t uri_get = {
 
 /* URI handler structure for POST /uri */
 httpd_uri_t uri_post = {
-    .uri      = "/uri",
+    .uri      = "/axes/first",
     .method   = HTTP_POST,
     .handler  = post_handler,
     .user_ctx = NULL
