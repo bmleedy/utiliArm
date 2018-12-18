@@ -8,7 +8,8 @@ CHARSTRING=$CHARSTRING$(cat -);
 
 #todo: iterate through eac
 HTML_FILES=./html/*.html
-HEADER_PATH="./main/"
+HEADER_PATH="./components/webserver/include/"
+mkdir -p ${HEADER_PATH}
 #delete all generated headers that exist
 rm ${HEADER_PATH}/*.html.hh
 
