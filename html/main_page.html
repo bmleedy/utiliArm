@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>slider demo</title>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
+  <style>#slider { margin: 10px; }  </style>
+  <script src="//code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <style>
+    .slidecontainer {
+      width: 100%;
+    }
+    
+    .slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 25px;
+      background: #d3d3d3;
+      outline: none;
+      opacity: 0.7;
+      -webkit-transition: .2s;
+      transition: opacity .2s;
+    }
+    
+    .slider:hover {
+      opacity: 1;
+    }
+  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+</head>
+<body>
+
+<h1>Custom Range Slider</h1>
+<p>Drag the slider to display the current value.</p>
+
+<div class="slidecontainer">
+  <input type="range" min="0" max="180" value="90" class="slider" id="slider1">
+</div>
+<div>
+  <p id="state"><p>
+</div>
+<div id="sliderlist"></div>
+
+<script>
+  var sliders = [];
+
+  for (var i = 0; i < 6; i++) {
+  
+    var inputline = document.createElement('li');
+    
+    var slideoutput    = document.createElement('p');
+    slideoutput.setAttribute("id","slideval"+i)
+		      
+    sliders[i] = document.createElement("INPUT");
+    sliders[i].setAttribute("type", "range");
+    sliders[i].setAttribute("min", "0");
+    sliders[i].setAttribute("max", "180");
+    sliders[i].setAttribute("value","90");
+    sliders[i].setAttribute("class","slider");
+    sliders[i].setAttribute("id","slider"+i);
+    sliders[i].axis = i;
+    sliders[i].onclick = function() {
+      var output = document.getElementById("slideval"+this.axis);
+      output.innerHTML = sliders[this.axis].value;
+		      
+      $.post( "/controls/" + this.id, { axis: this.axis, value: this.value } )
+        .done(function (data) {
+          //alert( "Data Loaded: " + this.axis + " : " + data );
+        })
+        .fail(function(data) {
+          alert( "POST to the board failed with message: " + this.axis + " : " + data );
+        });
+    }
+
+    slideoutput.innerHTML = sliders[i].value;
+
+    inputline.appendChild(sliders[i]);
+    inputline.appendChild(slideoutput);
+    document.body.appendChild(inputline);
+  }
+</script>
+
+</body>
+</html>

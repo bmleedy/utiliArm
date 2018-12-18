@@ -53,3 +53,15 @@ dkms.conf
 
 # autosave files (for emacs)
 *~
+*\#
+
+# generated html headers
+*.html.hh
+
+# eclipse-generated files
+.cproject
+.project
+.settings
+build
+sdkconfig*
+

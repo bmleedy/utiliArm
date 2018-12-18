@@ -13,7 +13,7 @@
 
 
 #include "webserver.h"
-#include "main_page.h"
+
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
@@ -69,7 +69,7 @@ httpd_uri_t uri_get = {
 
 /* URI handler structure for POST /uri */
 httpd_uri_t uri_post = {
-    .uri      = "/axes/first",
+    .uri      = "/controls",
     .method   = HTTP_POST,
     .handler  = post_handler,
     .user_ctx = NULL
