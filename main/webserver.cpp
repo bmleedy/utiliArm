@@ -1,19 +1,6 @@
-#include <string.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/event_groups.h"
-#include "esp_system.h"
-#include "esp_wifi.h"
-#include "esp_event.h"
-#include "esp_event_loop.h"
-#include "esp_log.h"
-#include "nvs_flash.h"
-#include "lwip/err.h"
-#include "lwip/sys.h"
-
-
 #include "webserver.h"
 
+#define WEBSERVER_LOG_TAG "webserver.cpp"
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
@@ -59,6 +46,51 @@ esp_err_t post_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+
+/* Our URI handler function to be called during POST /uri request */
+esp_err_t axis_post_handler(httpd_req_t *req)
+{
+    /* Destination buffer for content of HTTP POST request.
+     * httpd_req_recv() accepts char* only, but content could
+     * as well be any binary data (needs type casting).
+     * In case of string data, null termination will be absent, and
+     * content length would give length of string */
+    char content [101];
+
+    /* Truncate if content length larger than the buffer */
+    // Always leave one character in the buffer for the null termination
+    size_t recv_size = MIN(req->content_len, (sizeof(content)-1));
+
+    int ret = httpd_req_recv(req, content, recv_size);
+
+    // Null terminate the content after receiving it for printing
+    content[recv_size] = '\0';
+	    
+    if (ret <= 0) {  /* 0 return value indicates connection closed */
+        /* Check if timeout occurred */
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+            /* In case of timeout one can choose to retry calling
+             * httpd_req_recv(), but to keep it simple, here we
+             * respond with an HTTP 408 (Request Timeout) error */
+            httpd_resp_send_408(req);
+        }
+        /* In case of error, returning ESP_FAIL will
+         * ensure that the underlying socket is closed */
+        return ESP_FAIL;
+    }
+
+    //todo: print the body data
+    ESP_LOGI(WEBSERVER_LOG_TAG, "POST Request Data: %s", content);
+    //todo: parse the body data
+    //todo: move an axis here
+    
+    /* Send a simple response */
+    const char * resp = "URI POST Response";
+    httpd_resp_send(req, resp, strlen(resp));
+    return ESP_OK;
+}
+
+
 /* URI handler structure for GET /uri */
 httpd_uri_t uri_get = {
     .uri      = "/",
@@ -71,7 +103,7 @@ httpd_uri_t uri_get = {
 httpd_uri_t uri_post = {
     .uri      = "/controls",
     .method   = HTTP_POST,
-    .handler  = post_handler,
+    .handler  = axis_post_handler,
     .user_ctx = NULL
 };
 
