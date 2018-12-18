@@ -70,7 +70,8 @@ install:
 script:
   # Go back to the git repository
   - cd $PROJECT_PATH
-  # Update configuration so that kconfig doesn't start interactive mode
+  - ./generate_headers_from_html.bash
+# Update configuration so that kconfig doesn't start interactive mode
   - make defconfig
   # Build project from the git repository
   - make
