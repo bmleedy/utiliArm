@@ -57,9 +57,13 @@
 #define STEPS_TO_SWEEP 400  ///< go this many steps, then switch directions
 
 // Servo test constants
-#define SERVO_OUTPUT_PIN GPIO_NUM_19  ///< connected to servo pulse input
-#define SERVO_SWEEP_DEGREES 100       ///< full width of servo sweep
-#define SERVO_OFFSET 90               ///< location of servo sweep center
+static const gpio_num_t servo_output_pins[6] = {GPIO_NUM_14,
+						GPIO_NUM_27,
+						GPIO_NUM_32,
+						GPIO_NUM_33,
+						GPIO_NUM_25,
+						GPIO_NUM_26};
+RobotAxis * axes[6];
 
 /*! @var s_wifi_event_group
  * FreeRTOS event group to signal when we are connected */
@@ -163,7 +167,7 @@ ESP_LOGI  (TAG, "initializew_wifi(): connect to ap SSID:%s password:%s",
  * 
  * This function is spawned as a task to perform GPIO operations to make
  * the servos sweep back and forth.
- */
+
 void motion_test_task(void *pvParameter) {
   int32_t hwm = 0;
 
@@ -195,7 +199,8 @@ void motion_test_task(void *pvParameter) {
     hwm = uxTaskGetStackHighWaterMark(NULL);
     ESP_LOGI(TAG, "Motion Task stack high water mark: %d (32-bit words)", hwm);
   }
-}
+*/
+
 
 /*!
  * @fn app_main
@@ -220,9 +225,17 @@ extern "C" void app_main() {
   ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
   initialize_wifi();
 
-  // Start the webserver
-  start_webserver();
 
+  for(int i=0;i<6;i++) {
+    ESP_LOGI(TAG, "initializing servo axis %d", i);
+    axes[i] = new ServoAxis(180,0,90,servo_output_pins[i],i);
+  }
+  // todo: wrap arm access in mutexes, if needed
+  
+  // Start the webserver
+  start_webserver(axes,6);
+  /*
   ESP_LOGI(TAG, "Creating motor control test task. %p", &motion_test_task);
   xTaskCreate(&motion_test_task, "motion_test", 2000, NULL, 5, NULL);
+  */
 }

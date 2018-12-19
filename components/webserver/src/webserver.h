@@ -16,9 +16,13 @@
 #include "lwip/sys.h"
 #include <esp_http_server.h>
 #include "main_page.html.hh"
+#include "RobotAxis.h"
+#include <string>
+#include <iostream>
+#include <map>
+#include <memory>
 
 void stop_webserver(httpd_handle_t server);
-httpd_handle_t start_webserver(void);
-
+httpd_handle_t start_webserver(RobotAxis ** axes, int32_t num_axes);
 
 #endif

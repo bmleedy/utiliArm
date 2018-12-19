@@ -4,20 +4,25 @@
 #define SERVOAXIS_TAG "ServoAxis.cpp"
 
 ServoAxis::ServoAxis(uint8_t max_degrees,
-	  uint8_t min_degrees,
-	  uint8_t start_degrees,
-	  gpio_num_t dio_pin) : RobotAxis(max_degrees,
-					  min_degrees,
-					  start_degrees) {
+		     uint8_t min_degrees,
+		     uint8_t start_degrees,
+		     gpio_num_t dio_pin,
+		     int32_t timer_channel) : RobotAxis(max_degrees,
+							min_degrees,
+							start_degrees) {
 
+  ESP_LOGD(SERVOAXIS_TAG, "constructor() attaching to gpio pin: %d", dio_pin);
   dio_pin_ = dio_pin;
+  timer_channel_ = timer_channel;
   servo_ = new servoControl();
-  servo_->attach(dio_pin_);
+  servo_->attach(dio_pin_, 400, 2600, (ledc_channel_t)timer_channel_);
   go_to(start_degrees);
 }
 
 
 bool ServoAxis::go_to(uint8_t position_deg) {
+  ESP_LOGD(SERVOAXIS_TAG, "goto() command received to pin %d: %d", dio_pin_, position_deg);
+
   this->command_deg_ = position_deg;
 
   // Check input

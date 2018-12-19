@@ -15,11 +15,11 @@ public:
 	    uint8_t start_degrees) : max_deg_(max_degrees),
                                      min_deg_(min_degrees),
                                      command_deg_(start_degrees) {}
-  bool go_to(uint8_t position_deg) {return false;}
-  bool go_to(uint8_t position_deg, uint16_t speed) {return false;}
-  bool go_to_blocking(uint8_t position_deg){return go_to(position_deg);}
-  bool halt() {return false;}
-  uint8_t get_position() {return position_;}
+  virtual bool go_to(uint8_t position_deg) {return false;}
+  virtual bool go_to(uint8_t position_deg, uint16_t speed) {return false;}
+  virtual bool go_to_blocking(uint8_t position_deg){return go_to(position_deg);}
+  virtual bool halt() {return false;}
+  int32_t get_position() {return position_;}
 
 
 protected:

@@ -15,7 +15,8 @@ public:
   ServoAxis(uint8_t max_degrees,
 	    uint8_t min_degrees,
 	    uint8_t start_degrees,
-	    gpio_num_t dio_pin);
+	    gpio_num_t dio_pin,
+	    int32_t timer_channel=0);
   bool go_to(uint8_t position_deg);
   bool go_to(uint8_t position_deg, uint16_t speed);
   bool halt();
@@ -25,8 +26,9 @@ public:
 
 private:
   gpio_num_t dio_pin_;
+  int32_t timer_channel_;
   servoControl * servo_;
-
+  
 };
 
 #endif
