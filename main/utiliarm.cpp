@@ -42,18 +42,22 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-#include "servoControl.h"
+
+#include "ServoAxis.h"
+#include "StepperAxis.h"
+
 #include "webserver.h"
 #include "SharedKeyStore.h"
 
 // Stepper test constants
-#define STEPPER_STEP_PIN GPIO_NUM_27       ///< controller step input
-#define STEPPER_DIRECTION_PIN GPIO_NUM_26  ///< controller direction input
+#define STEPPER_STEP_PIN GPIO_NUM_23       ///< controller step input
+#define STEPPER_DIRECTION_PIN GPIO_NUM_22  ///< controller direction input
+#define STEPPER_LIMIT_PIN GPIO_NUM_25     ///< todo: bogus
 #define STEP_PERIOD_MS 25   ///< step every n milliseconds
 #define STEPS_TO_SWEEP 400  ///< go this many steps, then switch directions
 
 // Servo test constants
-#define SERVO_OUTPUT_PIN GPIO_NUM_17  ///< connected to servo pulse input
+#define SERVO_OUTPUT_PIN GPIO_NUM_19  ///< connected to servo pulse input
 #define SERVO_SWEEP_DEGREES 100       ///< full width of servo sweep
 #define SERVO_OFFSET 90               ///< location of servo sweep center
 
@@ -165,51 +169,28 @@ void motion_test_task(void *pvParameter) {
 
   // Configure the GPIO pin for the servo
   ESP_LOGI(TAG, "motion_test_task: creating servocontrol class...");
-  servoControl myServo;
+  ServoAxis * myServo = new ServoAxis(180,0,90,SERVO_OUTPUT_PIN);
 
-  // does this servo library conflict with the timer in use by the wifi adaptor?
-  ESP_LOGI(TAG, "motion_test_task: attaching to servo...");
-  myServo.attach(SERVO_OUTPUT_PIN);
-  // Defaults: myServo.attach(pin, 400, 2600, LEDC_CHANNEL_0, LEDC_TIMER0);
-  // to use more servo set a valid ledc channel and timer
-  ESP_LOGI(TAG, "motion_test_task: writing zero to servo...");
-  myServo.write(0);  // zero out the servo
 
+  StepperAxis * myStepper = new StepperAxis(180,0,90,1600,STEPPER_STEP_PIN, STEPPER_DIRECTION_PIN,STEPPER_LIMIT_PIN, true);
+  myStepper->force_ready();
+  
   // initialize state for the step pin and the direction
   bool direction_state = false;
   int servo_command = SERVO_SWEEP_DEGREES / 2;  // degrees
 
-  // Select pad as a gpio function from IOMUX
-  ESP_LOGI(TAG, "motion_test_task: setting gpio pad...");
-  gpio_pad_select_gpio (STEPPER_STEP_PIN);
-  gpio_pad_select_gpio (STEPPER_DIRECTION_PIN);
 
-  // Set the GPIO as a push/pull output
-  gpio_set_direction(STEPPER_STEP_PIN, GPIO_MODE_OUTPUT);
-  gpio_set_direction(STEPPER_DIRECTION_PIN, GPIO_MODE_OUTPUT);
-
+ 
   while (1) {
-    //! @todo crash or fail to build if STEP_PERIOD_MS is <= 1.
-    // Set direction pin
-    gpio_set_level(STEPPER_DIRECTION_PIN, direction_state);
 
     // Command the servo
-    myServo.write(servo_command + SERVO_OFFSET);
-
-    // Step STEPS_TO_SWEEP times
-    for (int i = 0; i < STEPS_TO_SWEEP; i++) {
-      // go high for 1 ms
-      gpio_set_level(STEPPER_STEP_PIN, 1);
-      vTaskDelay(1 / portTICK_PERIOD_MS);
-
-      // go low for the remainder of the period
-      gpio_set_level(STEPPER_STEP_PIN, 0);
-      vTaskDelay((STEP_PERIOD_MS - 1) / portTICK_PERIOD_MS);
-    }
-
+    myServo->go_to(servo_command + SERVO_OFFSET);
+    myStepper->go_to(servo_command + SERVO_OFFSET);
+    
     // Reverse direction state
     direction_state = !direction_state;
     servo_command = -servo_command;
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
     ESP_LOGI(TAG, "Reversing Servo Direction........%d\n", servo_command);
     hwm = uxTaskGetStackHighWaterMark(NULL);
     ESP_LOGI(TAG, "Motion Task stack high water mark: %d (32-bit words)", hwm);
