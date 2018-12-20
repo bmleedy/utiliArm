@@ -1,5 +1,5 @@
-#ifndef UTILIARMWEBSRV_H
-#define UTILIARMWEBSRV_H
+#ifndef COMPONENTS_WEBSERVER_SRC_WEBSERVER_H_
+#define COMPONENTS_WEBSERVER_SRC_WEBSERVER_H_
 
 
 #include <string.h>
@@ -25,4 +25,4 @@
 void stop_webserver(httpd_handle_t server);
 httpd_handle_t start_webserver(RobotAxis ** axes, int32_t num_axes);
 
-#endif
+#endif  // COMPONENTS_WEBSERVER_SRC_WEBSERVER_H_

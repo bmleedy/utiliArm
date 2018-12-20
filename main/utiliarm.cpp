@@ -28,7 +28,6 @@
  * 
  */
 
-//! @todo adjust ESP stack size for child task.
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -42,28 +41,34 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-
+// Components from this project
 #include "ServoAxis.h"
 #include "StepperAxis.h"
-
 #include "webserver.h"
 #include "SharedKeyStore.h"
 
-// Stepper test constants
+// Stepper constants
 #define STEPPER_STEP_PIN GPIO_NUM_23       ///< controller step input
 #define STEPPER_DIRECTION_PIN GPIO_NUM_22  ///< controller direction input
 #define STEPPER_LIMIT_PIN GPIO_NUM_25     ///< todo: bogus
 #define STEP_PERIOD_MS 25   ///< step every n milliseconds
 #define STEPS_TO_SWEEP 400  ///< go this many steps, then switch directions
 
-// Servo test constants
-static const gpio_num_t servo_output_pins[6] = {GPIO_NUM_14,
-						GPIO_NUM_27,
-						GPIO_NUM_32,
-						GPIO_NUM_33,
-						GPIO_NUM_25,
-						GPIO_NUM_26};
-RobotAxis * axes[6];
+// Servo Constants
+#define SERVO_MIN_ANGLE       0  ///< minimum angle servos can command
+#define SERVO_MAX_ANGLE     180  ///< maximum angle servos can command
+#define SERVO_INITIAL_ANGLE  90  ///< go to this angle when whe init
+#define SERVO_NUM_AXES        6  ///< number of axes to initialize
+
+/*! @var servo_output_pins
+ *   this array holds the pins we use for servo outputs */
+static const gpio_num_t servo_output_pins[SERVO_NUM_AXES] = { GPIO_NUM_14,
+    GPIO_NUM_27, GPIO_NUM_32, GPIO_NUM_33, GPIO_NUM_25, GPIO_NUM_26 };
+
+/*! @var axes
+ *   array of pointers to generic robot axes to be passed
+ *   to callbacks which control the axes. */
+RobotAxis * axes[SERVO_NUM_AXES];
 
 /*! @var s_wifi_event_group
  * FreeRTOS event group to signal when we are connected */
@@ -72,9 +77,11 @@ static EventGroupHandle_t s_wifi_event_group;
 /* @var WIFI_CONNECTED_BIT
  * event group bit for wifi connect */
 const int WIFI_CONNECTED_BIT = BIT0;
+
 /* @var TAG
  * tag for this app's log entries */
 static const char *TAG = "wifi station";
+
 /* @var s_retry_num
  * how many times have we retried connecting to wifi?*/
 static int s_retry_num = 0;
@@ -123,19 +130,13 @@ static esp_err_t event_handler(void *ctx, system_event_t *event) {
  * needed to set the ESP32 up as a wifi station.
  */
 void initialize_wifi() {
-  ESP_LOGI(TAG, "initialize_wifi(): tcpip_adapter_init...\n");
+  ESP_LOGD(TAG, "initialize_wifi(): initializing.");
   s_wifi_event_group = xEventGroupCreate();
   tcpip_adapter_init();
-
-  ESP_LOGI(TAG, "initialize_wifi(): esp_event_loop_init...\n");
   ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
-
-  ESP_LOGI(TAG, "initialize_wifi(): wifi init\n");
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-
-  ESP_LOGI(TAG, "initialize_wifi(): wifi set mode\n");
-  ESP_ERROR_CHECK (esp_wifi_set_mode(WIFI_MODE_STA) );
+  ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 
   // create station config
 wifi_config_t  sta_config;
@@ -146,61 +147,13 @@ wifi_config_t  sta_config;
       CONFIG_ESP_WIFI_PASSWORD, 32);
   sta_config.sta.bssid_set = false;
 
-  ESP_LOGI(TAG, "initialize_wifi(): wifi set config\n");
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
-
-  ESP_LOGI(TAG, "initialize_wifi(): wifi start\n");
-  ESP_ERROR_CHECK (esp_wifi_start() );
-
-ESP_LOGI  (TAG, "wifi connect\n");
-  ESP_ERROR_CHECK (esp_wifi_connect() );
-
-ESP_LOGI  (TAG, "initializew_wifi(): connect to ap SSID:%s password:%s",
+  ESP_ERROR_CHECK(esp_wifi_start());
+  ESP_ERROR_CHECK(esp_wifi_connect() );
+  ESP_LOGD(TAG, "initializew_wifi(): connect to ap SSID:%s password:%s",
       reinterpret_cast<char *>(sta_config.sta.ssid),
       reinterpret_cast<char *>(sta_config.sta.password));
 }
-
-/*!
- * @fn motion_test_task
- * 
- * @brief performs GPIO operations to sweep motors and servos
- * 
- * This function is spawned as a task to perform GPIO operations to make
- * the servos sweep back and forth.
-
-void motion_test_task(void *pvParameter) {
-  int32_t hwm = 0;
-
-  // Configure the GPIO pin for the servo
-  ESP_LOGI(TAG, "motion_test_task: creating servocontrol class...");
-  ServoAxis * myServo = new ServoAxis(180,0,90,SERVO_OUTPUT_PIN);
-
-
-  StepperAxis * myStepper = new StepperAxis(180,0,90,1600,STEPPER_STEP_PIN, STEPPER_DIRECTION_PIN,STEPPER_LIMIT_PIN, true);
-  myStepper->force_ready();
-  
-  // initialize state for the step pin and the direction
-  bool direction_state = false;
-  int servo_command = SERVO_SWEEP_DEGREES / 2;  // degrees
-
-
- 
-  while (1) {
-
-    // Command the servo
-    myServo->go_to(servo_command + SERVO_OFFSET);
-    myStepper->go_to(servo_command + SERVO_OFFSET);
-    
-    // Reverse direction state
-    direction_state = !direction_state;
-    servo_command = -servo_command;
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
-    ESP_LOGI(TAG, "Reversing Servo Direction........%d\n", servo_command);
-    hwm = uxTaskGetStackHighWaterMark(NULL);
-    ESP_LOGI(TAG, "Motion Task stack high water mark: %d (32-bit words)", hwm);
-  }
-*/
-
 
 /*!
  * @fn app_main
@@ -212,12 +165,13 @@ void motion_test_task(void *pvParameter) {
  */
 extern "C" void app_main() {
   SharedKeyStore * key_store = new SharedKeyStore(100);
-  
+
   // Initialize NVS
   esp_err_t ret = nvs_flash_init();
   if (ret == ESP_ERR_NVS_NO_FREE_PAGES
       || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    ESP_ERROR_CHECK (nvs_flash_erase());ret = nvs_flash_init();
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
   }
   ESP_ERROR_CHECK(ret);
 
@@ -225,17 +179,13 @@ extern "C" void app_main() {
   ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
   initialize_wifi();
 
-
-  for(int i=0;i<6;i++) {
+  for (int i = 0; i < 6; i++) {
     ESP_LOGI(TAG, "initializing servo axis %d", i);
-    axes[i] = new ServoAxis(180,0,90,servo_output_pins[i],i);
+    axes[i] = new ServoAxis(SERVO_MAX_ANGLE,
+    SERVO_MIN_ANGLE,
+    SERVO_INITIAL_ANGLE, servo_output_pins[i], i);
   }
-  // todo: wrap arm access in mutexes, if needed
-  
-  // Start the webserver
-  start_webserver(axes,6);
-  /*
-  ESP_LOGI(TAG, "Creating motor control test task. %p", &motion_test_task);
-  xTaskCreate(&motion_test_task, "motion_test", 2000, NULL, 5, NULL);
-  */
+
+  // Start the webserver, whose callbacks move the axes
+  start_webserver(axes, SERVO_NUM_AXES);
 }
