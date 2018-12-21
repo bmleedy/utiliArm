@@ -75,6 +75,9 @@ script:
   - make defconfig
   # Build project from the git repository
   - make
+  # do a linting pass
+  - ./run_lint.bash
+
 
 # Generate and deploy documentation
 after_success:
