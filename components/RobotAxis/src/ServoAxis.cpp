@@ -1,5 +1,5 @@
 #include "ServoAxis.h"
-#include "esp_log.h"
+#include "esp_log.h" // NOLINT(*) - for spurious linter error
 
 #define SERVOAXIS_TAG "ServoAxis.cpp"
 

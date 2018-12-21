@@ -1,3 +1,4 @@
+#include <string>   // NOLINT(*) - for spurious linter error
 #include "SharedKeyStore.h"
 
 /*

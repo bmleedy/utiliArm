@@ -1,12 +1,13 @@
 #ifndef COMPONENTS_SHAREDKEYSTORE_SRC_SHAREDKEYSTORE_H_
 #define COMPONENTS_SHAREDKEYSTORE_SRC_SHAREDKEYSTORE_H_
 
+#include <map>
+#include <string>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include <map>
-#include <string>
+
 
 #define KEYSTORE_TAG "SharedKeyStore"
 

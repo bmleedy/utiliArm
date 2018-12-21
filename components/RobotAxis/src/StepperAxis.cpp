@@ -1,5 +1,5 @@
 #include "StepperAxis.h"
-#include "esp_log.h"
+#include "esp_log.h"  // NOLINT(*) - for spurious linter error
 
 #define STEPPERAXIS_DEFAULT_SPEED 100  // centidegrees per second
 #define STEPPERAXIS_TAG "StepperAxis.cpp"
