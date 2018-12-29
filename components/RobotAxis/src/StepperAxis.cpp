@@ -24,7 +24,7 @@ extern "C" void move(void * pvParams) {
 
   // direction flag will invert direction bit
   bool direction_bit = (motion_needed < 0);
-  gpio_set_level(GPIO_NUM_22, direction_bit);
+  gpio_set_level(params->direction_pin, direction_bit);
 
   if (params->speed == 0 || params->steps_per_rev == 0)
     ESP_LOGE(STEPPERAXIS_TAG, "move(): invalid speed or steps per rev: %d, %d",
@@ -42,13 +42,13 @@ extern "C" void move(void * pvParams) {
 
   for (int32_t i = 0; i < steps_needed; i++) {
     // DIO High
-    gpio_set_level(GPIO_NUM_23, 1);
+    gpio_set_level(params->step_pin, 1);
 
     // Wait half of period
     vTaskDelay(1);  // todo: implement speed
 
     // DIO Low
-    gpio_set_level(GPIO_NUM_23, 0);
+    gpio_set_level(params->step_pin, 0);
     // Indicate that we've moved a step
     if (motion_needed >= 0)
       *params->position = *params->position + 360000 / params->steps_per_rev;
@@ -63,6 +63,8 @@ extern "C" void move(void * pvParams) {
   *params->position = params->destination;
   // destroy myself
   // vTaskDelete(NULL);
+
+  // todo: check for the limit pin and set the zero position if if trips on this step
 }
 
 StepperAxis::StepperAxis(uint8_t max_degrees, uint8_t min_degrees,

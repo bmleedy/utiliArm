@@ -163,7 +163,19 @@ wifi_config_t  sta_config;
  * This is the root application which calls all configuration
  * and spawns all processes.
  */
+#define INCREMENT 2
+#define AXIS_DELAY_PERIOD 50
+
+#define STEPPER_TEST_ENA GPIO_NUM_17
+#define STEPPER_TEST_DIR GPIO_NUM_5
+#define STEPPER_TEST_STP GPIO_NUM_18
+
 extern "C" void app_main() {
+
+  gpio_pad_select_gpio(GPIO_NUM_16);
+  gpio_set_direction(GPIO_NUM_16, GPIO_MODE_INPUT);
+
+
   SharedKeyStore * key_store = new SharedKeyStore(100);
 
   // Initialize NVS
@@ -186,6 +198,53 @@ extern "C" void app_main() {
     SERVO_INITIAL_ANGLE, servo_output_pins[i], i);
   }
 
+/*
+  // todo: new servo test code
+  int32_t increment_value = INCREMENT;
+  int32_t position = 90; //degrees
+  while(1) {
+    ESP_LOGI(TAG, "sending %d to axis 0, GPIO: %d", position,gpio_get_level(GPIO_NUM_16));
+    axes[0]->go_to(position);
+
+    position = position + increment_value;
+
+    if(position > 180 || position < 0) {
+      increment_value = -1 * increment_value;
+      position = position + increment_value;
+    }
+    vTaskDelay( AXIS_DELAY_PERIOD );
+
+  }
+*/
+
+
+  // todo: stepper test code
+  gpio_pad_select_gpio(STEPPER_TEST_ENA);
+  gpio_pad_select_gpio(STEPPER_TEST_DIR);
+  gpio_pad_select_gpio(STEPPER_TEST_STP);
+
+  gpio_set_direction(STEPPER_TEST_ENA, GPIO_MODE_OUTPUT);
+  gpio_set_direction(STEPPER_TEST_DIR, GPIO_MODE_OUTPUT);
+  gpio_set_direction(STEPPER_TEST_STP, GPIO_MODE_OUTPUT);
+
+  gpio_set_level(STEPPER_TEST_ENA,0);
+  gpio_set_level(STEPPER_TEST_DIR,1);
+  gpio_set_level(STEPPER_TEST_STP,1);
+
+  bool direction_state = false;
+
+  while (1) {
+    gpio_set_level(STEPPER_TEST_DIR, direction_state);
+
+    for(int i=0; i<1600; i++){
+      vTaskDelay(1);
+      gpio_set_level(STEPPER_TEST_STP,1);
+      vTaskDelay(1);
+      gpio_set_level(STEPPER_TEST_STP,0);
+    }
+    direction_state = !direction_state;
+    ESP_LOGI(TAG, "setting direction to %d", direction_state);
+  }
   // Start the webserver, whose callbacks move the axes
   start_webserver(axes, SERVO_NUM_AXES);
 }
