@@ -61,12 +61,23 @@
 #define SERVO_NUM_AXES        6  ///< number of axes to initialize
 
 
-
+struct ServoConfig {
+    gpio_num_t pin;
+    uint8_t starting_angle;
+};
 
 /*! @var servo_output_pins
  *   this array holds the pins we use for servo outputs */
-static const gpio_num_t servo_output_pins[SERVO_NUM_AXES] = { GPIO_NUM_14,
-    GPIO_NUM_27, GPIO_NUM_32, GPIO_NUM_33, GPIO_NUM_25, GPIO_NUM_26 };
+static const ServoConfig servo_output_pins[] = {
+    {GPIO_NUM_14,   33},  // D Axis
+    {GPIO_NUM_27,   90},  // NC
+    {GPIO_NUM_32,   90},  // NC
+    {GPIO_NUM_33,  170},  // C Axis
+    {GPIO_NUM_25,   25},  // F Axis
+    {GPIO_NUM_26,   50}   // E Axis
+};
+
+
 
 /*! @var axes
  *   array of pointers to generic robot axes to be passed
@@ -194,11 +205,12 @@ extern "C" void app_main() {
   ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
   initialize_wifi();
 
-  for (int i = 0; i < 6; i++) {
+  int32_t array_len = sizeof(servo_output_pins)/sizeof(servo_output_pins[0]);
+  for (int i = 0; i < array_len; i++) {
     ESP_LOGI(TAG, "initializing servo axis %d", i);
     axes[i] = new ServoAxis(SERVO_MAX_ANGLE,
     SERVO_MIN_ANGLE,
-    SERVO_INITIAL_ANGLE, servo_output_pins[i], i);
+    servo_output_pins[i].starting_angle, servo_output_pins[i].pin, i);
   }
 
 /*
