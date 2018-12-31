@@ -16,11 +16,13 @@ extern "C" void move(void * pvParams) {
 
   // only performs motion in one direction at a time (no feedback)
   int32_t motion_needed_centideg = params->destination - *params->position;
-  int32_t motion_needed_steps = motion_needed_centideg * params->steps_per_rev / 36000;
+  int32_t motion_needed_steps =
+      motion_needed_centideg * params->steps_per_rev / 36000;
 
   ESP_LOGI(STEPPERAXIS_TAG,
       "move(): Move command received. Desired: %d centideg "
-          "Actual: %d centideg Delta: %d steps", params->destination, *params->position,
+          "Actual: %d centideg Delta: %d steps",
+          params->destination, *params->position,
       motion_needed_steps);
 
   // TRUE direction bit for positive motion
@@ -30,7 +32,7 @@ extern "C" void move(void * pvParams) {
         params->direction_pin);
 
   unsigned int direction_value;
-  if(params->direction_flag)
+  if (params->direction_flag)
     direction_value = direction_bit ? 0 : 1;
   else
     direction_value = direction_bit ? 1 : 0;
@@ -72,10 +74,11 @@ extern "C" void move(void * pvParams) {
   // destroy myself if I'm being run as a task
 
   ESP_LOGI(STEPPERAXIS_TAG, "move(): movement complete.");
-  if(params->am_a_task)
+  if (params->am_a_task)
     vTaskDelete(NULL);
 
-  // todo: check for the limit pin and set the zero position if if trips on this step
+  // todo: check for the limit pin and set the zero position
+  //  if it trips on this step
 }
 
 StepperAxis::StepperAxis(uint8_t max_degrees, uint8_t min_degrees,
@@ -85,10 +88,10 @@ StepperAxis::StepperAxis(uint8_t max_degrees, uint8_t min_degrees,
     RobotAxis(max_degrees, min_degrees, start_degrees) {
   // GPIO
   motor_steps_per_rev_ = motor_steps_per_rev;
-  step_dio_pin_ = step_dio_pin;
-  direction_dio_pin_ = direction_dio_pin;
-  limit_dio_pin_ = limit_dio_pin;
-  home_direction_= home_direction;
+  step_dio_pin_        = step_dio_pin;
+  direction_dio_pin_   = direction_dio_pin;
+  limit_dio_pin_       = limit_dio_pin;
+  home_direction_      = home_direction;
 
   gpio_pad_select_gpio(step_dio_pin_);
   gpio_pad_select_gpio(direction_dio_pin_);
@@ -102,23 +105,25 @@ StepperAxis::StepperAxis(uint8_t max_degrees, uint8_t min_degrees,
   if (find_home(home_direction_))
     go_to(start_degrees);
   else
-    ESP_LOGE(STEPPERAXIS_TAG, "StepperAxis(%d,%d,%d,%d,%d,%d,%d,%d): Limit not found! Axis disabled.",
+    ESP_LOGE(STEPPERAXIS_TAG, "StepperAxis(%d,%d,%d,%d,%d,%d,%d,%d):"
+        " Limit not found! Axis disabled.",
         max_degrees, min_degrees, start_degrees, motor_steps_per_rev,
         step_dio_pin, direction_dio_pin, limit_dio_pin, home_direction);
 }
 
 bool StepperAxis::find_home(unsigned int direction) {
-
   ready_ = false;  // clear any previous "ready"
 
   // don't try to find home farther than 180 degrees of steps
-  for(int32_t i=0; i < motor_steps_per_rev_ / 2; i++) {
+  for (int32_t i = 0; i < motor_steps_per_rev_ / 2; i++) {
     // check limit switch before trying to move
-    if(gpio_get_level(limit_dio_pin_)) {
-      ESP_LOGI(STEPPERAXIS_TAG, "find_home(%d): Limit found! Setting position to zero.",
+    if (gpio_get_level(limit_dio_pin_)) {
+      ESP_LOGI(STEPPERAXIS_TAG, "find_home(%d): Limit found!"
+          " Setting position to zero.",
           direction);
       position_ = 0;
-      ready_ = true;  //this is the only place where we automatically set ready to true
+      ready_ = true;  // this is the only place where
+                      // we automatically set ready to true
       break;
     }
     // take one more step in the *negative* direction
@@ -126,8 +131,9 @@ bool StepperAxis::find_home(unsigned int direction) {
 
     vTaskDelay(STEPPERAXIS_HOMING_PERIOD_TICKS);
 
-    if((i % 100) == 0){
-      ESP_LOGI(STEPPERAXIS_TAG, "find_home(%d): Seeking limit. Step[%d], DIO[%d]",
+    if ( (i % 100) == 0 ) {
+      ESP_LOGI(STEPPERAXIS_TAG, "find_home(%d): Seeking limit."
+          "Step[%d], DIO[%d]",
           direction, i, gpio_get_level(limit_dio_pin_));
     }
   }
@@ -213,16 +219,16 @@ bool StepperAxis::halt() {
 
 
 void StepperAxis::step(unsigned int direction) {
-
   unsigned int servodir = 0;
   if (direction)
     servodir = 1;
   // set direction
   gpio_set_level(direction_dio_pin_, servodir);
-  //ESP_LOGD(STEPPERAXIS_TAG, "step(%d): stepping in direction %d", direction, servodir);
+  // ESP_LOGD(STEPPERAXIS_TAG, "step(%d): stepping in direction %d",
+  //          direction, servodir);
   // perform 1 OS tick step
   gpio_set_level(step_dio_pin_, 1);
   vTaskDelay(1);
   gpio_set_level(step_dio_pin_, 0);
-  //(end state should always be zero)
+  // (end state should always be zero)
 }

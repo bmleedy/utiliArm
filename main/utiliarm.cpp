@@ -51,8 +51,6 @@
 #define SERVO_MIN_ANGLE       0  ///< minimum angle servos can command
 #define SERVO_MAX_ANGLE     180  ///< maximum angle servos can command
 
-
-
 struct ServoConfig {
     gpio_num_t pin;
     uint8_t starting_angle;
@@ -70,11 +68,12 @@ static const ServoConfig servo_axes_config[] = {
     {GPIO_NUM_26,   50}   // E Axis (wrist twist)
 };
 
+
 struct StepperConfig {
-    gpio_num_t step;   // step pin
-    gpio_num_t dir;    // direction pin
-    gpio_num_t enable; // enable pin
-    gpio_num_t limit;  // limit pin
+    gpio_num_t step;    // step pin
+    gpio_num_t dir;     // direction pin
+    gpio_num_t enable;  // enable pin
+    gpio_num_t limit;   // limit pin
     uint8_t starting_angle;  // start location (deg)
 };
 
@@ -82,12 +81,12 @@ struct StepperConfig {
  *   this array holds the pins we use for servo outputs */
 static const StepperConfig stepper_axes_config[] = {
     // step     ,          dir,      enable,       limit, starting_angle
-    {GPIO_NUM_17,  GPIO_NUM_22, GPIO_NUM_18, GPIO_NUM_23,             45},  // B Axis (shoulder)
-    {GPIO_NUM_15,   GPIO_NUM_2,  GPIO_NUM_4,  GPIO_NUM_5,             10}   // A Axis (turntable)
+    {GPIO_NUM_17, GPIO_NUM_22, GPIO_NUM_18, GPIO_NUM_23,  45},  // B (shoulder)
+    {GPIO_NUM_15,  GPIO_NUM_2,  GPIO_NUM_4,  GPIO_NUM_5,  10}   // A (turntable)
 };
 
-
-
+/*! @var TOTAL_AXES_COUNT
+ *   based on the servo and stepper axis configs, total number of axes */
 const int TOTAL_AXES_COUNT =
     sizeof(servo_axes_config)/sizeof(servo_axes_config[0]) +
     sizeof(stepper_axes_config)/sizeof(stepper_axes_config[0]);
@@ -190,20 +189,8 @@ wifi_config_t  sta_config;
  * This is the root application which calls all configuration
  * and spawns all processes.
  */
-#define INCREMENT 2
-#define AXIS_DELAY_PERIOD 50
-
-#define STEPPER_TEST_ENA GPIO_NUM_18
-#define STEPPER_TEST_DIR GPIO_NUM_5
-#define STEPPER_TEST_STP GPIO_NUM_18
-
 extern "C" void app_main() {
-
-  gpio_pad_select_gpio(GPIO_NUM_23);
-  gpio_set_direction(GPIO_NUM_23, GPIO_MODE_INPUT);
-
-
-  SharedKeyStore * key_store = new SharedKeyStore(100);
+  // SharedKeyStore * key_store = new SharedKeyStore(100);  //todo: useme
 
   // Initialize NVS
   esp_err_t ret = nvs_flash_init();
@@ -214,10 +201,6 @@ extern "C" void app_main() {
   }
   ESP_ERROR_CHECK(ret);
 
-  // Start WIFI
-  ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
-  initialize_wifi();
-
   int32_t axis_index = 0;
 
   // Init all servo axes
@@ -226,7 +209,9 @@ extern "C" void app_main() {
     ESP_LOGI(TAG, "initializing servo axis %d", axis_index);
     axes[axis_index] = new ServoAxis(SERVO_MAX_ANGLE,
     SERVO_MIN_ANGLE,
-    servo_axes_config[axis_index].starting_angle, servo_axes_config[axis_index].pin, axis_index);
+    servo_axes_config[axis_index].starting_angle,
+    servo_axes_config[axis_index].pin,
+    axis_index);
     axis_index++;
   }
 
@@ -234,90 +219,21 @@ extern "C" void app_main() {
   array_len = sizeof(stepper_axes_config)/sizeof(stepper_axes_config[0]);
   for (int i = 0; i < array_len; i++) {
     ESP_LOGI(TAG, "initializing servo axis %d", axis_index);
-    axes[axis_index] = new StepperAxis(180, 0, stepper_axes_config[i].starting_angle,
-        1600, stepper_axes_config[i].step,
-        stepper_axes_config[i].dir, stepper_axes_config[i].limit,
+    axes[axis_index] = new StepperAxis(SERVO_MAX_ANGLE,
+        SERVO_MIN_ANGLE,
+        stepper_axes_config[i].starting_angle,
+        1600,
+        stepper_axes_config[i].step,
+        stepper_axes_config[i].dir,
+        stepper_axes_config[i].limit,
         1);
     axis_index++;
   }
 
-/*
-  // todo: new servo test code
-  int32_t increment_value = INCREMENT;
-  int32_t position = 90; //degrees
-  while(1) {
-    ESP_LOGI(TAG, "sending %d to axis 0, GPIO: %d", position,gpio_get_level(GPIO_NUM_16));
-    axes[0]->go_to(position);
+  // Start WIFI
+  ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+  initialize_wifi();
 
-    position = position + increment_value;
-
-    if(position > 180 || position < 0) {
-      increment_value = -1 * increment_value;
-      position = position + increment_value;
-    }
-    vTaskDelay( AXIS_DELAY_PERIOD );
-
-  }
-*/
-
-/*
-  // todo: stepper test code
-  gpio_pad_select_gpio(STEPPER_TEST_ENA);
-  gpio_pad_select_gpio(STEPPER_TEST_DIR);
-  gpio_pad_select_gpio(STEPPER_TEST_STP);
-
-  gpio_set_direction(STEPPER_TEST_ENA, GPIO_MODE_OUTPUT);
-  gpio_set_direction(STEPPER_TEST_DIR, GPIO_MODE_OUTPUT);
-  gpio_set_direction(STEPPER_TEST_STP, GPIO_MODE_OUTPUT);
-
-  gpio_set_level(STEPPER_TEST_ENA,0);
-  gpio_set_level(STEPPER_TEST_DIR,1);
-  gpio_set_level(STEPPER_TEST_STP,1);
-
-  bool direction_state = false;
-
-  while (gpio_get_level(GPIO_NUM_23)) {
-    gpio_set_level(STEPPER_TEST_DIR, direction_state);
-
-    for(int i=0; i<1600; i++){
-      vTaskDelay(1);
-      gpio_set_level(STEPPER_TEST_STP, 1);
-      vTaskDelay(1);
-      gpio_set_level(STEPPER_TEST_STP, 0);
-      if(gpio_get_level(GPIO_NUM_23) != 1)
-        break;
-    }
-    direction_state = !direction_state;
-    ESP_LOGI(TAG, "setting direction to %d", direction_state);
-  }
-  gpio_set_level(STEPPER_TEST_ENA, 1);
-*/
-/*
-  gpio_pad_select_gpio(STEPPER_TEST_ENA);
-  gpio_set_direction(STEPPER_TEST_ENA, GPIO_MODE_OUTPUT);
-  gpio_set_level(STEPPER_TEST_ENA,1);
-
-  gpio_pad_select_gpio(STEPPER_DIRECTION_PIN);
-  gpio_set_direction(STEPPER_DIRECTION_PIN, GPIO_MODE_OUTPUT);
-  gpio_set_level(STEPPER_DIRECTION_PIN,0);
-
-  //gpio_pad_select_gpio(STEPPER_TEST_ENA);
-  //gpio_set_direction(STEPPER_TEST_ENA, GPIO_MODE_OUTPUT);
-  //gpio_set_level(STEPPER_TEST_ENA,0);
-
-  StepperAxis * test_stepper = new StepperAxis(180, 0, 90, 1600,
-      STEPPER_STEP_PIN, STEPPER_DIRECTION_PIN, STEPPER_LIMIT_PIN, 0);
-  while (1){
-
-    vTaskDelay(10000);
-    ESP_LOGI(TAG, "moving to 80");
-    test_stepper->go_to(80);
-    vTaskDelay(10000);
-    ESP_LOGI(TAG, "moving to 100");
-    test_stepper->go_to(135);
-    vTaskDelay(10000);
-  }
-  */
   // Start the webserver, whose callbacks move the axes
   start_webserver(axes, TOTAL_AXES_COUNT);
 }

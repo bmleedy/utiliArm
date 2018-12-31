@@ -39,7 +39,8 @@ class StepperAxis: public RobotAxis {
   // StepperAxis private methods
  private:
   bool find_home(unsigned int direction);
-  void step(unsigned int direction); // sets direction and does a 1ms (one OS tick) pulse
+  void step(unsigned int direction);  // sets direction and does a 1ms
+                                      // (one OS tick) pulse
   uint8_t get_position() {
     return position_;
   }
