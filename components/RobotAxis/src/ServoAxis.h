@@ -11,7 +11,7 @@ class ServoAxis: public RobotAxis {
     // RobotAxis API
     ServoAxis(uint8_t max_degrees, uint8_t min_degrees, uint8_t start_degrees,
         gpio_num_t dio_pin, int32_t timer_channel = 0);
-    ~ServoAxis(){}
+    ~ServoAxis() {}
     bool go_to(uint8_t position_deg);
     bool go_to(uint8_t position_deg, uint16_t speed);
     bool halt();

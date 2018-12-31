@@ -28,7 +28,7 @@ class StepperAxis: public RobotAxis {
       uint32_t motor_steps_per_rev, gpio_num_t step_dio_pin,
       gpio_num_t direction_dio_pin, gpio_num_t limit_dio_pin,
       unsigned int home_direction);
-  ~StepperAxis(){}
+  ~StepperAxis() {}
   bool go_to(uint8_t position_deg);
   bool go_to_blocking(uint8_t position_deg);
   bool go_to(uint8_t position_deg, uint16_t speed);
