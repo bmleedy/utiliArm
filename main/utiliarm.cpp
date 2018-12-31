@@ -57,8 +57,7 @@
 // Servo Constants
 #define SERVO_MIN_ANGLE       0  ///< minimum angle servos can command
 #define SERVO_MAX_ANGLE     180  ///< maximum angle servos can command
-#define SERVO_INITIAL_ANGLE  90  ///< go to this angle when whe init
-#define SERVO_NUM_AXES        6  ///< number of axes to initialize
+
 
 
 struct ServoConfig {
@@ -68,7 +67,8 @@ struct ServoConfig {
 
 /*! @var servo_output_pins
  *   this array holds the pins we use for servo outputs */
-static const ServoConfig servo_output_pins[] = {
+static const ServoConfig servo_axes_config[] = {
+    //       pin, start,
     {GPIO_NUM_14,   33},  // D Axis
     {GPIO_NUM_27,   90},  // NC
     {GPIO_NUM_32,   90},  // NC
@@ -77,12 +77,32 @@ static const ServoConfig servo_output_pins[] = {
     {GPIO_NUM_26,   50}   // E Axis
 };
 
+struct StepperConfig {
+    gpio_num_t step;   // step pin
+    gpio_num_t dir;    // direction pin
+    gpio_num_t enable; // enable pin
+    gpio_num_t limit;  // limit pin
+    uint8_t starting_angle;  // start location (deg)
+};
 
+/*! @var stepper_axes_config
+ *   this array holds the pins we use for servo outputs */
+static const StepperConfig stepper_axes_config[] = {
+    // step     ,          dir,      enable,  bbbbblimit, starting_angle
+    {GPIO_NUM_18,  GPIO_NUM_22, GPIO_NUM_17, GPIO_NUM_23,             45},  // D Axis (shoulder)
+    {GPIO_NUM_15,  GPIO_NUM_15, GPIO_NUM_15, GPIO_NUM_15,             10}   // A Axis (turntable)
+};
+
+
+
+const int TOTAL_AXES_COUNT =
+    sizeof(servo_axes_config)/sizeof(servo_axes_config[0]) +
+    sizeof(stepper_axes_config)/sizeof(stepper_axes_config[0]);
 
 /*! @var axes
  *   array of pointers to generic robot axes to be passed
  *   to callbacks which control the axes. */
-RobotAxis * axes[SERVO_NUM_AXES];
+RobotAxis * axes[TOTAL_AXES_COUNT];
 
 /*! @var s_wifi_event_group
  * FreeRTOS event group to signal when we are connected */
@@ -205,12 +225,27 @@ extern "C" void app_main() {
   ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
   initialize_wifi();
 
-  int32_t array_len = sizeof(servo_output_pins)/sizeof(servo_output_pins[0]);
+  int32_t axis_index = 0;
+
+  // Init all servo axes
+  int32_t array_len = sizeof(servo_axes_config)/sizeof(servo_axes_config[0]);
   for (int i = 0; i < array_len; i++) {
-    ESP_LOGI(TAG, "initializing servo axis %d", i);
-    axes[i] = new ServoAxis(SERVO_MAX_ANGLE,
+    ESP_LOGI(TAG, "initializing servo axis %d", axis_index);
+    axes[axis_index] = new ServoAxis(SERVO_MAX_ANGLE,
     SERVO_MIN_ANGLE,
-    servo_output_pins[i].starting_angle, servo_output_pins[i].pin, i);
+    servo_axes_config[axis_index].starting_angle, servo_axes_config[axis_index].pin, axis_index);
+    axis_index++;
+  }
+
+  // Init all Stepper Axes
+  array_len = sizeof(stepper_axes_config)/sizeof(stepper_axes_config[0]);
+  for (int i = 0; i < array_len; i++) {
+    ESP_LOGI(TAG, "initializing servo axis %d", axis_index);
+    axes[axis_index] = new StepperAxis(180, 0, stepper_axes_config[i].starting_angle,
+        1600, stepper_axes_config[i].step,
+        stepper_axes_config[i].dir, stepper_axes_config[i].limit,
+        1);
+    axis_index++;
   }
 
 /*
@@ -291,5 +326,5 @@ extern "C" void app_main() {
   }
   */
   // Start the webserver, whose callbacks move the axes
-  start_webserver(axes, SERVO_NUM_AXES);
+  start_webserver(axes, TOTAL_AXES_COUNT);
 }
