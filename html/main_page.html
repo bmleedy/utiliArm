@@ -43,7 +43,9 @@
   var sliders = [];
 
   for (var i = 0; i < 6; i++) {
-    var inputline = document.createElement('li');    
+		      var inputline = document.createElement('li');
+    inputline.setAttribute("id","sliderline" + i);
+		      
     var slideoutput    = document.createElement('p');
     slideoutput.setAttribute("id","slideval"+i)
 		      
@@ -72,7 +74,21 @@
     inputline.appendChild(sliders[i]);
     inputline.appendChild(slideoutput);
     document.body.appendChild(inputline);
-  }
+    }
+
+    var linetochange = document.getElementById("sliderline0");
+    linetochange.innerHTML = "<b>D Servo Axis</b>" + linetochange.innerHTML;
+    var linetochange = document.getElementById("sliderline1");
+    linetochange.innerHTML = "<b>PIN27 (NC)</b>" + linetochange.innerHTML;
+    var linetochange = document.getElementById("sliderline2");
+    linetochange.innerHTML = "<b>PIN32 (NC)</b>" + linetochange.innerHTML;
+    var linetochange = document.getElementById("sliderline3");
+    linetochange.innerHTML = "<b>C Servo Axis</b>" + linetochange.innerHTML;
+    var linetochange = document.getElementById("sliderline4");
+    linetochange.innerHTML = "<b>F Servo Axis</b>" + linetochange.innerHTML;
+    var linetochange = document.getElementById("sliderline5");
+    linetochange.innerHTML = "<b>E Servo Axis</b>" + linetochange.innerHTML;
+		      
 </script>
 
 </body>
