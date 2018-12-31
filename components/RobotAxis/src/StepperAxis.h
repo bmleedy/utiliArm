@@ -17,6 +17,7 @@ struct stepTaskParameters {
   bool direction_flag;  // true for direction bit high = positive
   gpio_num_t direction_pin;
   gpio_num_t step_pin;
+  gpio_num_t limit_pin;
   bool am_a_task;       // true if running in a task
 };
 

@@ -65,8 +65,20 @@ extern "C" void move(void * pvParams) {
     else
       *params->position = *params->position - 36000 / params->steps_per_rev;
 
+    // todo: change this to an ISR that disables the motor on the rising edge
+    if (i > 5 && gpio_get_level(params->limit_pin) == 1) {
+      ESP_LOGE(STEPPERAXIS_TAG, "move(): Limit switch hit"
+          " during movement! Stopping.");
+      if (params->am_a_task)
+        vTaskDelete(NULL);
+      else
+        break;
+    }
+
     // Wait half of period
     vTaskDelay(STEPPERAXIS_MOVE_PERIOD_TICKS);  // todo: implement speed
+
+
   }
 
   // todo: this is a bit of a fudge, but reduces potential rounding error
@@ -186,6 +198,7 @@ bool StepperAxis::go_to(uint8_t position_deg, uint16_t speed) {
   task_params_.direction_flag = home_direction_;
   task_params_.direction_pin = direction_dio_pin_;
   task_params_.step_pin = step_dio_pin_;
+  task_params_.limit_pin = limit_dio_pin_;
   task_params_.steps_per_rev = motor_steps_per_rev_;
   task_params_.am_a_task = !blocking_;
 
