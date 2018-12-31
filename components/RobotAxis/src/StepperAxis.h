@@ -4,6 +4,9 @@
 #include "RobotAxis.h"
 #include "freertos/task.h"
 
+#define STEPPERAXIS_HOMING_PERIOD_TICKS 20
+#define STEPPERAXIS_MOVE_PERIOD_TICKS   20
+
 // todo: doxygen
 
 struct stepTaskParameters {
@@ -14,6 +17,7 @@ struct stepTaskParameters {
   bool direction_flag;  // true for direction bit high = positive
   gpio_num_t direction_pin;
   gpio_num_t step_pin;
+  bool am_a_task;       // true if running in a task
 };
 
 class StepperAxis: public RobotAxis {
@@ -22,7 +26,7 @@ class StepperAxis: public RobotAxis {
   StepperAxis(uint8_t max_degrees, uint8_t min_degrees, uint8_t start_degrees,
       uint32_t motor_steps_per_rev, gpio_num_t step_dio_pin,
       gpio_num_t direction_dio_pin, gpio_num_t limit_dio_pin,
-      bool home_direction);
+      unsigned int home_direction);
   bool go_to(uint8_t position_deg);
   bool go_to_blocking(uint8_t position_deg);
   bool go_to(uint8_t position_deg, uint16_t speed);
@@ -34,7 +38,8 @@ class StepperAxis: public RobotAxis {
 
   // StepperAxis private methods
  private:
-  bool find_home(bool direction);
+  bool find_home(unsigned int direction);
+  void step(unsigned int direction); // sets direction and does a 1ms (one OS tick) pulse
   uint8_t get_position() {
     return position_;
   }
