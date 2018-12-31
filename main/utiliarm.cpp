@@ -47,13 +47,6 @@
 #include "webserver.h"
 #include "SharedKeyStore.h"
 
-// Stepper constants
-#define STEPPER_STEP_PIN GPIO_NUM_17       ///< controller step input
-#define STEPPER_DIRECTION_PIN GPIO_NUM_22  ///< controller direction input
-#define STEPPER_LIMIT_PIN GPIO_NUM_23     ///< todo: bogus
-#define STEP_PERIOD_MS 25   ///< step every n milliseconds
-#define STEPS_TO_SWEEP 400  ///< go this many steps, then switch directions
-
 // Servo Constants
 #define SERVO_MIN_ANGLE       0  ///< minimum angle servos can command
 #define SERVO_MAX_ANGLE     180  ///< maximum angle servos can command
@@ -69,12 +62,12 @@ struct ServoConfig {
  *   this array holds the pins we use for servo outputs */
 static const ServoConfig servo_axes_config[] = {
     //       pin, start,
-    {GPIO_NUM_14,   33},  // D Axis
+    {GPIO_NUM_14,   33},  // D Axis (wrist bend)
     {GPIO_NUM_27,   90},  // NC
     {GPIO_NUM_32,   90},  // NC
-    {GPIO_NUM_33,  170},  // C Axis
-    {GPIO_NUM_25,   25},  // F Axis
-    {GPIO_NUM_26,   50}   // E Axis
+    {GPIO_NUM_33,  170},  // C Axis (elbow)
+    {GPIO_NUM_25,   25},  // F Axis (claw)
+    {GPIO_NUM_26,   50}   // E Axis (wrist twist)
 };
 
 struct StepperConfig {
@@ -88,9 +81,9 @@ struct StepperConfig {
 /*! @var stepper_axes_config
  *   this array holds the pins we use for servo outputs */
 static const StepperConfig stepper_axes_config[] = {
-    // step     ,          dir,      enable,  bbbbblimit, starting_angle
-    {GPIO_NUM_18,  GPIO_NUM_22, GPIO_NUM_17, GPIO_NUM_23,             45},  // D Axis (shoulder)
-    {GPIO_NUM_15,  GPIO_NUM_15, GPIO_NUM_15, GPIO_NUM_15,             10}   // A Axis (turntable)
+    // step     ,          dir,      enable,       limit, starting_angle
+    {GPIO_NUM_17,  GPIO_NUM_22, GPIO_NUM_18, GPIO_NUM_23,             45},  // B Axis (shoulder)
+    {GPIO_NUM_15,   GPIO_NUM_2,  GPIO_NUM_4,  GPIO_NUM_5,             10}   // A Axis (turntable)
 };
 
 

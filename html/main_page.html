@@ -40,10 +40,23 @@
 <div id="sliderlist"></div>
 
 <script>
-  var sliders = [];
+  var axis_labels = ["D Axis (wrist bend) ",
+		      "PIN27 (NC) ",
+		      "PIN32 (NC) ",
+		      "C Axis (elbow) ",
+		      "F Axis (claw) ",
+		      "E Axis (wrist twist) ",
+		      "D Axis (shoulder) ",
+		      "A Axis (turntable) "]
 
-  for (var i = 0; i < 6; i++) {
-		      var inputline = document.createElement('li');
+  var sliders = [];
+  for (var i = 0; i < axis_labels.length; i++) {
+    var inputlabel = document.createElement('h2');
+    inputlabel.innerHTML = axis_labels[i];
+    document.body.appendChild(inputlabel);
+
+
+    var inputline = document.createElement('li');
     inputline.setAttribute("id","sliderline" + i);
 		      
     var slideoutput    = document.createElement('p');
@@ -60,7 +73,7 @@
     sliders[i].onclick = function() {
       var output = document.getElementById("slideval"+this.axis);
       output.innerHTML = sliders[this.axis].value;
-		      
+      console.log("Clicked slider");	
       $.post( "/controls", { axis: this.axis, value: this.value } )
         .done(function (data) {
           //alert( "Data Loaded: " + this.axis + " : " + data );
@@ -74,20 +87,8 @@
     inputline.appendChild(sliders[i]);
     inputline.appendChild(slideoutput);
     document.body.appendChild(inputline);
-    }
+  }
 
-    var linetochange = document.getElementById("sliderline0");
-    linetochange.innerHTML = "<b>D Servo Axis</b>" + linetochange.innerHTML;
-    var linetochange = document.getElementById("sliderline1");
-    linetochange.innerHTML = "<b>PIN27 (NC)</b>" + linetochange.innerHTML;
-    var linetochange = document.getElementById("sliderline2");
-    linetochange.innerHTML = "<b>PIN32 (NC)</b>" + linetochange.innerHTML;
-    var linetochange = document.getElementById("sliderline3");
-    linetochange.innerHTML = "<b>C Servo Axis</b>" + linetochange.innerHTML;
-    var linetochange = document.getElementById("sliderline4");
-    linetochange.innerHTML = "<b>F Servo Axis</b>" + linetochange.innerHTML;
-    var linetochange = document.getElementById("sliderline5");
-    linetochange.innerHTML = "<b>E Servo Axis</b>" + linetochange.innerHTML;
 		      
 </script>
 
