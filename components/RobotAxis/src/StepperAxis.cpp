@@ -77,8 +77,6 @@ extern "C" void move(void * pvParams) {
 
     // Wait half of period
     vTaskDelay(STEPPERAXIS_MOVE_PERIOD_TICKS);  // todo: implement speed
-
-
   }
 
   // todo: this is a bit of a fudge, but reduces potential rounding error
