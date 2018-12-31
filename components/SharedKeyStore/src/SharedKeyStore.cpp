@@ -19,6 +19,7 @@
 SharedKeyStore::SharedKeyStore(uint16_t max_keys) {
   max_keys_ = max_keys;
   write_mutex_ = xSemaphoreCreateBinary();
+  max_key_len_ = 32;
 }
 
 bool SharedKeyStore::insert_or_update(std::string key, std::string value) {
