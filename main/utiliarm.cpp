@@ -48,9 +48,9 @@
 #include "SharedKeyStore.h"
 
 // Stepper constants
-#define STEPPER_STEP_PIN GPIO_NUM_23       ///< controller step input
+#define STEPPER_STEP_PIN GPIO_NUM_17       ///< controller step input
 #define STEPPER_DIRECTION_PIN GPIO_NUM_22  ///< controller direction input
-#define STEPPER_LIMIT_PIN GPIO_NUM_25     ///< todo: bogus
+#define STEPPER_LIMIT_PIN GPIO_NUM_23     ///< todo: bogus
 #define STEP_PERIOD_MS 25   ///< step every n milliseconds
 #define STEPS_TO_SWEEP 400  ///< go this many steps, then switch directions
 
@@ -59,6 +59,9 @@
 #define SERVO_MAX_ANGLE     180  ///< maximum angle servos can command
 #define SERVO_INITIAL_ANGLE  90  ///< go to this angle when whe init
 #define SERVO_NUM_AXES        6  ///< number of axes to initialize
+
+
+
 
 /*! @var servo_output_pins
  *   this array holds the pins we use for servo outputs */
@@ -166,14 +169,14 @@ wifi_config_t  sta_config;
 #define INCREMENT 2
 #define AXIS_DELAY_PERIOD 50
 
-#define STEPPER_TEST_ENA GPIO_NUM_17
+#define STEPPER_TEST_ENA GPIO_NUM_18
 #define STEPPER_TEST_DIR GPIO_NUM_5
 #define STEPPER_TEST_STP GPIO_NUM_18
 
 extern "C" void app_main() {
 
-  gpio_pad_select_gpio(GPIO_NUM_16);
-  gpio_set_direction(GPIO_NUM_16, GPIO_MODE_INPUT);
+  gpio_pad_select_gpio(GPIO_NUM_23);
+  gpio_set_direction(GPIO_NUM_23, GPIO_MODE_INPUT);
 
 
   SharedKeyStore * key_store = new SharedKeyStore(100);
@@ -217,7 +220,7 @@ extern "C" void app_main() {
   }
 */
 
-
+/*
   // todo: stepper test code
   gpio_pad_select_gpio(STEPPER_TEST_ENA);
   gpio_pad_select_gpio(STEPPER_TEST_DIR);
@@ -233,18 +236,48 @@ extern "C" void app_main() {
 
   bool direction_state = false;
 
-  while (1) {
+  while (gpio_get_level(GPIO_NUM_23)) {
     gpio_set_level(STEPPER_TEST_DIR, direction_state);
 
     for(int i=0; i<1600; i++){
       vTaskDelay(1);
-      gpio_set_level(STEPPER_TEST_STP,1);
+      gpio_set_level(STEPPER_TEST_STP, 1);
       vTaskDelay(1);
-      gpio_set_level(STEPPER_TEST_STP,0);
+      gpio_set_level(STEPPER_TEST_STP, 0);
+      if(gpio_get_level(GPIO_NUM_23) != 1)
+        break;
     }
     direction_state = !direction_state;
     ESP_LOGI(TAG, "setting direction to %d", direction_state);
   }
+  gpio_set_level(STEPPER_TEST_ENA, 1);
+*/
+/*
+  gpio_pad_select_gpio(STEPPER_TEST_ENA);
+  gpio_set_direction(STEPPER_TEST_ENA, GPIO_MODE_OUTPUT);
+  gpio_set_level(STEPPER_TEST_ENA,1);
+
+  gpio_pad_select_gpio(STEPPER_DIRECTION_PIN);
+  gpio_set_direction(STEPPER_DIRECTION_PIN, GPIO_MODE_OUTPUT);
+  gpio_set_level(STEPPER_DIRECTION_PIN,0);
+
+  //gpio_pad_select_gpio(STEPPER_TEST_ENA);
+  //gpio_set_direction(STEPPER_TEST_ENA, GPIO_MODE_OUTPUT);
+  //gpio_set_level(STEPPER_TEST_ENA,0);
+
+  StepperAxis * test_stepper = new StepperAxis(180, 0, 90, 1600,
+      STEPPER_STEP_PIN, STEPPER_DIRECTION_PIN, STEPPER_LIMIT_PIN, 0);
+  while (1){
+
+    vTaskDelay(10000);
+    ESP_LOGI(TAG, "moving to 80");
+    test_stepper->go_to(80);
+    vTaskDelay(10000);
+    ESP_LOGI(TAG, "moving to 100");
+    test_stepper->go_to(135);
+    vTaskDelay(10000);
+  }
+  */
   // Start the webserver, whose callbacks move the axes
   start_webserver(axes, SERVO_NUM_AXES);
 }
