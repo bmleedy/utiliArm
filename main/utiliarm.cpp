@@ -60,10 +60,10 @@ struct ServoConfig {
  *   this array holds the pins we use for servo outputs */
 static const ServoConfig servo_axes_config[] = {
     //       pin, start,
-    {GPIO_NUM_14,   33},  // D Axis (wrist bend)
+    {GPIO_NUM_14,  170},  // C Axis (elbow)
     {GPIO_NUM_27,   90},  // NC
     {GPIO_NUM_32,   90},  // NC
-    {GPIO_NUM_33,  170},  // C Axis (elbow)
+    {GPIO_NUM_33,   33},  // D Axis (wrist bend)
     {GPIO_NUM_25,   25},  // F Axis (claw)
     {GPIO_NUM_26,   50}   // E Axis (wrist twist)
 };
@@ -226,7 +226,7 @@ extern "C" void app_main() {
         stepper_axes_config[i].step,
         stepper_axes_config[i].dir,
         stepper_axes_config[i].limit,
-        1);
+        0);
     axis_index++;
   }
 
