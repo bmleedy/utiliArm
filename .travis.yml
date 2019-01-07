@@ -65,7 +65,7 @@ install:
   - export IDF_PATH=~/esp/esp-idf
   # Install python requirements for the idf
   - /usr/bin/python -m pip install --user -r /home/travis/esp/esp-idf/requirements.txt
-  # Instal cpplint for the style check
+  # Install cpplint for the style check
   - /usr/bin/python -m pip install --user cpplint
 
 script:
