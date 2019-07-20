@@ -1,6 +1,8 @@
 #include "Arduino.h"
 #include "ServoAxis.h"
 #include "GearMotorAxis.h"
+#include "AxisProtocol.h"
+
 //todo: add zero hashmarks indicators on all joints
 
 #define NUM_ITERATIONS_PER_MOTION 10
@@ -19,7 +21,9 @@
 
 #define SERVO_PIN_1 10
 
-// todo: use tinkercad to test serial protocol
+AxisProtocol serial_protocol_data;
+
+char serial_buffer[SERIAL_BUFFER_LENGTH];  //todo: SUPER not-threadsafe!!!!
 
 class MultiAxisRunner{
   uint16_t last_run_time = 0;
@@ -69,58 +73,45 @@ class MultiAxisRunner{
   }
 };
 
-#define SERIAL_MESSAGE_BUFFER_SIZE 200
-char serial_message_buffer[SERIAL_MESSAGE_BUFFER_SIZE];
-
-void read_next_message(){
-
-  // Message should take no longer than 5 ms to arrive
-  Serial.setTimeout(10);
-  Serial.readBytesUntil('!',serial_message_buffer, SERIAL_MESSAGE_BUFFER_SIZE);
-
-  // tokenize the buffer to the first occurrence of '#'
-  // Check for termination character
-  // Check for checksum (impl later)
-  // Check for ',' at all locations
-  // Check for '|' at all locations
-  // for each 9-byte block, strtok on '|' and extract position and rate values
-  // sanity check values - discard message if out of range
-  
-};
-
-
-int a2_state = 0;
-int a3_state = 0;
-
-void print_bracket_value(int value){
-  Serial.print("[");
-  Serial.print(value);
-  Serial.print("]");
-}
-
-void dump_state_for(int delay_iterations){
-
-  for(int i=0; i<delay_iterations; i++){
-    a2_state = analogRead(ELBOW_AXIS);
-    a3_state = analogRead(SHOULDER_AXIS);
-    
-    Serial.print(F(" | "));
-    Serial.print(F(" A2:"));
-    print_bracket_value(a2_state);
-    Serial.print(F(" A3:"));
-    print_bracket_value(a3_state);
-    Serial.println(" ");
-
-    delay(100);
-  }
-}
-
 
 ArmAxis * shoulder;
 ArmAxis * elbow;
 ArmAxis * wrist_bend;
 ArmAxis * wrist_rot;
 ArmAxis * claw;
+
+
+// ISR for serial events
+void serialEvent() {
+  // todo: does this disable interrupts?
+  Serial.readBytesUntil(SERIAL_MESSAGE_TERMINATION_CHAR, 
+                        serial_buffer, 
+                        SERIAL_BUFFER_LENGTH);
+  serial_protocol_data.update(serial_buffer);
+  serial_protocol_data.print();
+}
+
+
+
+//------------------------------------------------------------------
+struct pose{
+  int16_t axis_pos[NUM_AXES];
+  int16_t axis_rate[NUM_AXES];
+  uint16_t duration_ms;
+};
+
+//  shoulder,     elbow,     wrist_bend,       wrist_rot,    claw
+pose testposes[] = {
+  {.axis_pos={  0 ,   0,   0,   0,   0},.axis_rate={0,0,0,0,0},.duration_ms=3000},
+  {.axis_pos={-500,1200,   0,   0,   0},.axis_rate={0,0,0,0,0},.duration_ms=3000},
+  {.axis_pos={-500,1200,-450, 200,   0},.axis_rate={0,0,0,0,0},.duration_ms=3000},
+  {.axis_pos={-500,1200, 450, 200,   0},.axis_rate={0,0,0,0,0},.duration_ms=3000},
+  {.axis_pos={-500,1200, 450, 200, 700},.axis_rate={0,0,0,0,0},.duration_ms=3000},
+  {.axis_pos={-500,1200, 450, 200,-750},.axis_rate={0,0,0,0,0},.duration_ms=3000},
+  {.axis_pos={-500,1200, 450, 200,   0},.axis_rate={0,0,0,0,0},.duration_ms=3000},
+};
+uint8_t current_auto_pose = 0;
+//------------------------------------------------------------------
 
 void setup() {
   // Config Serial Port and signify life
@@ -172,47 +163,59 @@ void setup() {
   Serial.println(F("Initialization Comlete!"));
 }
 
-#define PRINT_EVERY 10
-uint16_t print_iterator = 0;
-void loop(){
-  print_iterator++;
 
+
+
+void run_axes(){
   shoulder->run();
   elbow->run();
   wrist_rot->run();
   wrist_bend->run();
   claw->run();
+}
 
- if( print_iterator == PRINT_EVERY){
+#define LOOP_DELAY_MS   10
+#define PRINT_EVERY 100
+uint16_t loop_iterator = 0;
+uint16_t auto_cycles_remaining = 1000 / LOOP_DELAY_MS;  // iterations
+uint16_t last_command_serial = 0;
+
+void loop(){
+  loop_iterator++;
+
+  if(serial_protocol_data.get_last_serial() == 0){  // no commands received
+    // take commands from auto routine
+    if(auto_cycles_remaining-- == 0) {  //used up time, move to next pose
+      shoulder->set_desired_position(   testposes[current_auto_pose].axis_pos[0]);
+      elbow->set_desired_position(      testposes[current_auto_pose].axis_pos[1]);
+      wrist_bend->set_desired_position( testposes[current_auto_pose].axis_pos[2]);
+      wrist_rot->set_desired_position(  testposes[current_auto_pose].axis_pos[3]);
+      claw->set_desired_position(       testposes[current_auto_pose].axis_pos[4]);
+      Serial.print(F("Going to pose number "));Serial.println(current_auto_pose);
+      current_auto_pose++;
+      auto_cycles_remaining = testposes[current_auto_pose].duration_ms / LOOP_DELAY_MS;
+    }
+  } else {
+    // fill commands with last protocol message received
+    if(serial_protocol_data.get_last_serial() != last_command_serial){
+      shoulder->set_desired_position(serial_protocol_data.get_axis(0).position * 10);
+      elbow->set_desired_position(serial_protocol_data.get_axis(1).position * 10);
+      wrist_bend->set_desired_position(serial_protocol_data.get_axis(2).position * 10);
+      wrist_rot->set_desired_position(serial_protocol_data.get_axis(3).position * 10);
+      claw->set_desired_position(serial_protocol_data.get_axis(4).position * 10);
+      last_command_serial = serial_protocol_data.get_last_serial();
+      Serial.print(F("Following command number "));Serial.println(last_command_serial);
+    }
+  }
+
+  if(loop_iterator % 10 == 0)
+    run_axes();
+
+ if( loop_iterator == PRINT_EVERY){
     Serial.print(F("Shoulder: ")); shoulder->print();
     Serial.print(F("Elbow:    ")); elbow->print();
-    print_iterator = 0;
+    loop_iterator = 0;
  }
 
-
- if(millis() >= 3000 && millis() < 4000) {
-    shoulder->set_desired_position(-500);  //50 degrees from center
-    elbow->set_desired_position(1200);      // 30 degrees from center
- }
-
- if(millis() >= 6000 && millis() < 8000){
-  wrist_rot->set_desired_position(-450);
-  wrist_bend->set_desired_position(-200);
- }
-
-if(millis() >= 8000 && millis() < 10000){
-  wrist_rot->set_desired_position(450);
-  wrist_bend->set_desired_position(200);
- }
-
-if(millis() >= 10000 && millis() < 13000){
-  claw->set_desired_position(700);
-}
-
-if(millis() >= 13000){
-  claw->set_desired_position(-750);
-}
-
- 
-  delay(100);
+  delay(LOOP_DELAY_MS);
 }
