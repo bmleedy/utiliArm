@@ -100,8 +100,14 @@ struct pose{
   uint16_t duration_ms;
 };
 
+
+// todo: save these to EEPROM
+// todo: make programming utility
+// todo: make teaching utility
+
+#define NUM_TESTPOSES 7
 //  shoulder,     elbow,     wrist_bend,       wrist_rot,    claw
-pose testposes[] = {
+pose testposes[NUM_TESTPOSES] = {
   {.axis_pos={  0 ,   0,   0,   0,   0},.axis_rate={0,0,0,0,0},.duration_ms=3000},
   {.axis_pos={-500,1200,   0,   0,   0},.axis_rate={0,0,0,0,0},.duration_ms=3000},
   {.axis_pos={-500,1200,-450, 200,   0},.axis_rate={0,0,0,0,0},.duration_ms=3000},
@@ -185,7 +191,8 @@ void loop(){
 
   if(serial_protocol_data.get_last_serial() == 0){  // no commands received
     // take commands from auto routine
-    if(auto_cycles_remaining-- == 0) {  //used up time, move to next pose
+    if((auto_cycles_remaining-- == 0) &&
+        (current_auto_pose < NUM_TESTPOSES)) {  //used up time, move to next pose
       shoulder->set_desired_position(   testposes[current_auto_pose].axis_pos[0]);
       elbow->set_desired_position(      testposes[current_auto_pose].axis_pos[1]);
       wrist_bend->set_desired_position( testposes[current_auto_pose].axis_pos[2]);
