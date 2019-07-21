@@ -4,6 +4,7 @@
 #include "AxisProtocol.h"
 
 //todo: add zero hashmarks indicators on all joints
+// mark here
 
 #define NUM_ITERATIONS_PER_MOTION 10
 
@@ -24,55 +25,6 @@
 AxisProtocol serial_protocol_data;
 
 char serial_buffer[SERIAL_BUFFER_LENGTH];  //todo: SUPER not-threadsafe!!!!
-
-class MultiAxisRunner{
-  uint16_t last_run_time = 0;
-  ArmAxis * axes[8];
-
-  // null out the list
-  MultiAxisRunner(){
-    for(int i=0; i<8; i++){
-      axes[i] = NULL;
-    }
-  }
-
-  int8_t register_axis(uint8_t pos, ArmAxis * axis, const char name[4]){
-    //check that pause is in range
-    if(pos >= 8)
-      return -1;
-    
-    // check that the axis is enabled
-    if(!axis->is_enabled())
-      return -1;
-      
-    // check that pos is not already occupied
-    if(axes[pos] == NULL){
-      // save the axis to the array at pos
-      axes[pos] = axis;
-    } else {
-      return -1;
-    }
-    
-    return pos;
-  }
-
-  bool run(){
-    // run each non-null class
-    for(int i=0; i<8; i++){
-      if(axes[i] != NULL){
-        axes[i]->run();
-      }
-    }
-    // todo: return bitmap of success or failure
-    return true;
-  }
-
-  bool deregister_axis(uint8_t pos){
-    // todo: call destructor
-    // todo: null that position in the array
-  }
-};
-
 
 ArmAxis * shoulder;
 ArmAxis * elbow;
@@ -96,7 +48,7 @@ void serialEvent() {
 //------------------------------------------------------------------
 struct pose{
   int16_t axis_pos[NUM_AXES];
-  int16_t axis_rate[NUM_AXES];
+  //int16_t axis_rate[NUM_AXES];
   uint16_t duration_ms;
 };
 
@@ -104,17 +56,22 @@ struct pose{
 // todo: save these to EEPROM
 // todo: make programming utility
 // todo: make teaching utility
-
-#define NUM_TESTPOSES 7
+// todo: reduce 
+#define NUM_TESTPOSES 12
 //  shoulder,     elbow,     wrist_bend,       wrist_rot,    claw
-pose testposes[NUM_TESTPOSES] = {
-  {.axis_pos={  0 ,   0,   0,   0,   0},.axis_rate={0,0,0,0,0},.duration_ms=3000},
-  {.axis_pos={-500,1200,   0,   0,   0},.axis_rate={0,0,0,0,0},.duration_ms=3000},
-  {.axis_pos={-500,1200,-450, 200,   0},.axis_rate={0,0,0,0,0},.duration_ms=3000},
-  {.axis_pos={-500,1200, 450, 200,   0},.axis_rate={0,0,0,0,0},.duration_ms=3000},
-  {.axis_pos={-500,1200, 450, 200, 700},.axis_rate={0,0,0,0,0},.duration_ms=3000},
-  {.axis_pos={-500,1200, 450, 200,-750},.axis_rate={0,0,0,0,0},.duration_ms=3000},
-  {.axis_pos={-500,1200, 450, 200,   0},.axis_rate={0,0,0,0,0},.duration_ms=3000},
+const PROGMEM pose testposes[NUM_TESTPOSES] = {
+  {.axis_pos={  0 ,   0,   0,   0,   0},/*.axis_rate={0,0,0,0,0},*/.duration_ms=3000},  //1
+  {.axis_pos={-500,1200,   0,   0,   0},/*.axis_rate={0,0,0,0,0},*/.duration_ms=3000},  //2
+  {.axis_pos={-500,1200,-450, 200,   0},/*.axis_rate={0,0,0,0,0},*/.duration_ms=3000},  //3
+  {.axis_pos={-500,1200, 450, 200,   0},/*.axis_rate={0,0,0,0,0},*/.duration_ms=3000},  //4
+  {.axis_pos={-500,1200, 450, 200, 700},/*.axis_rate={0,0,0,0,0},*/.duration_ms=3000},  //5
+  {.axis_pos={-500,1200, 450, 200,-750},/*.axis_rate={0,0,0,0,0},*/.duration_ms=3000},  //6
+  {.axis_pos={-500,1200, 450, 200,   0},/*.axis_rate={0,0,0,0,0},*/.duration_ms=3000},  //7
+  {.axis_pos={ 450,   0,   0, 200,-750},/*.axis_rate={0,0,0,0,0},*/.duration_ms=3000},  //8
+  {.axis_pos={ 450,   0,   0, -500,-750},/*.axis_rate={0,0,0,0,0},*/.duration_ms=1000}, //9
+  {.axis_pos={ 450,   0,   0,  500, 750},/*.axis_rate={0,0,0,0,0},*/.duration_ms=1000}, //10
+  {.axis_pos={ 450,   0,   0, -500,-750},/*.axis_rate={0,0,0,0,0},*/.duration_ms=1000}, //11
+  {.axis_pos={ 450,   0,   0,  500, 750},/*.axis_rate={0,0,0,0,0},*/.duration_ms=1000}  //12
 };
 uint8_t current_auto_pose = 0;
 //------------------------------------------------------------------
