@@ -38,3 +38,10 @@ bool ServoAxis::run_axis(){
   
   return true;
 }
+
+void ServoAxis::print(){
+  Serial.print(millis());                 Serial.print(F(" , dest: "));
+  Serial.print(this->desired_position);   Serial.print(F(" , pos: "));
+  Serial.print(this->current_position);   Serial.print(F(" , raw: "));
+  Serial.println(" ");
+}

@@ -1,5 +1,5 @@
 #include "ArmAxis.h"
-
+#include "Arduino.h"
 
 bool ArmAxis::set_max_position(int16_t pos){
   if((pos >= -1800) && (pos <= 1800)){
@@ -19,24 +19,29 @@ bool ArmAxis::set_min_position(int16_t pos){
 
 ArmAxis::ArmAxis(int16_t max_position, int16_t min_position, int16_t default_position, int16_t max_rate){
   this->max_rate = max_rate;
-  this->set_desired_position(default_position);
-  this->set_max_position(max_position);
-  this->set_min_position(min_position); // todo: do something with success states of these methods
-  this->enabled = true;
+  bool success = true;
+  success &= this->set_desired_position(default_position);
+  success &= this->set_max_position(max_position);
+  success &= this->set_min_position(min_position);
+  if(success)
+    this->enabled = true;
+  else
+    Serial.println(F("ArmAxis constructor failed!!"));
 }
 
 // Setters  False = failure / illegal operation
 bool ArmAxis::set_desired_position(int16_t position_deg_tenths){
   // Sanity check input
-  if(position_deg_tenths > 1800) {
+  if(position_deg_tenths > this->max_position) {
     this->disable_axis(REASON_POS_TOO_HIGH);
-  } else if(position_deg_tenths < -1800) {
+    Serial.println(F("ArmAxis desired pos high!!"));
+  } else if(position_deg_tenths < this->min_position) {
     this->disable_axis(REASON_POS_TOO_LOW);
+    Serial.println(F("ArmAxis desired pos low!!"));
   } else {
     desired_position = position_deg_tenths;
     return true;
   }
-  
   return false;
 }
 

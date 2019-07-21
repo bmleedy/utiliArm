@@ -23,7 +23,7 @@ class ServoAxis : public ArmAxis
   int16_t read_rate();  
   int16_t read_position();
 
-  void print(){}
+  void print();
 };
 
 #endif
