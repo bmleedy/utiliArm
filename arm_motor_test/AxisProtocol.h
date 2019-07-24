@@ -87,11 +87,6 @@ class AxisProtocol{
   void update(char * serial_buffer){
     int16_t axis_field_protocol_data[NUM_AXES*2];
   
-    parse_serial_fields(axis_field_protocol_data, 
-                        NUM_AXES*2, 
-                        serial_buffer);
-    
-    this->store_fields(axis_field_protocol_data);
     // Check the data (starter, terminator, checksum)  todo: put all of these checks into the protocol class.
     if( !(serial_buffer[0] == '#') ){
       Serial.print(F("serialEvent() WARNING - no # found at start of serial message. Found: "));
@@ -116,6 +111,11 @@ class AxisProtocol{
       Serial.println(serial_buffer);
       return;
     }
+    parse_serial_fields(axis_field_protocol_data, 
+                        NUM_AXES*2, 
+                        serial_buffer);
+    
+    this->store_fields(axis_field_protocol_data);
   }
 } ;
 

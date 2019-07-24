@@ -35,7 +35,6 @@ bool ServoAxis::run_axis(){
   //todo: check max and min angles in base class run_axis
   int16_t servo_desired_angle =  (this->zero_angle*10) - this->desired_position;
   servo_control.write(servo_desired_angle/10);
-  
   return true;
 }
 

@@ -2,18 +2,24 @@
 #include "Arduino.h"
 
 bool ArmAxis::set_max_position(int16_t pos){
-  if((pos >= -1800) && (pos <= 1800)){
+  //Serial.print("Setting max pos to");Serial.println(pos);
+  if((pos <= 1800) && (pos >= -1800)){
     this->max_position = pos;
+    return true;
   } else {
     this->disable_axis(REASON_MAX_LIM_OUT_OF_RANGE);
+    return false;
   }
 }
 
 bool ArmAxis::set_min_position(int16_t pos){
-  if((pos >= -1800) && (pos <= 1800)){
+  //Serial.print("Setting min pos to");Serial.println(pos);
+  if((pos <= 1800) && (pos >= -1800)){
     this->min_position = pos;
+    return true;
   } else {
     this->disable_axis(REASON_MIN_LIM_OUT_OF_RANGE);
+    return false;
   }
 }
 
@@ -34,10 +40,8 @@ bool ArmAxis::set_desired_position(int16_t position_deg_tenths){
   // Sanity check input
   if(position_deg_tenths > this->max_position) {
     this->disable_axis(REASON_POS_TOO_HIGH);
-    Serial.println(F("ArmAxis desired pos high!!"));
   } else if(position_deg_tenths < this->min_position) {
     this->disable_axis(REASON_POS_TOO_LOW);
-    Serial.println(F("ArmAxis desired pos low!!"));
   } else {
     desired_position = position_deg_tenths;
     return true;
@@ -55,8 +59,10 @@ bool ArmAxis::set_max_rate(int16_t max_rate){
   // Sanity check input
   if(max_rate < 0) {
     this->disable_axis(REASON_NEGATIVE_RATE);
+    return false;
   } else if(!this->rate_enabled) {
     this->disable_axis(REASON_RATE_DISABLED);
+    return false;
   } else {
     this->max_rate = max_rate;
     return true;

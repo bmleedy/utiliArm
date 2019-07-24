@@ -84,5 +84,4 @@ void GearmotorAxis::print(){
   Serial.print(this->desired_position);   Serial.print(F(" , pos: "));
   Serial.print(this->current_position);   Serial.print(F(" , raw: "));
   Serial.print(status.raw_counts);
-  Serial.println(" ");
 }
