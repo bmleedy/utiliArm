@@ -4,28 +4,36 @@
 #include "GearMotorAxis.h"
 #include "StepperAxis.h"
 #include "AxisProtocol.h"
+#include "Wire.h"   // ~120 bytes of dynamic memory
 
+// https://www.arduino.cc/en/Tutorial/MasterWriter
 //todo: MECHANICAL  add zero hashmarks indicators on all joints and adaptors
 //todo: MECHANICAL  add holes for flange (in addition to existing holes)
 //todo: MECHANICAL  add slots/holes for installing the flange
-//todo: ELECTRICAL  add buttons (rocker switch) to manually move the 
+//todo: ELECTRICAL  add buttons (rocker switch) to manually move the arm axes
 //todo: ELECTRICAL  add a killswitch to stop motion on the big axes
 //todo: MECHANICAL  strengthen feet areas from cracking
 //todo: MECHANICAL  "bed" the shaft attachment to secure it
 //todo: MECHANICAl  widen screwdriver holes for bet
 //todo: MECHANICAL  make room for washers in feet
 
-#define BASE_AXIS A4    // todo: fixme
-#define BASE_STEP_PIN  12   // todo: fixme
-#define BASE_DIR_PIN   4   // todo: fixme
+#define SERIAL_READ_TIMEOUT         10   // ms, should take no more than 5ms
+
+#define I2C_SCL_PIN    A5  // clock pin
+#define I2C_SDA_PIN    A4  // data pin
+#define I2C_SLAVE_ADDRESS 8
+
+#define BASE_SENSOR     12 
+#define BASE_STEP_PIN   11   // todo: fixme
+#define BASE_DIR_PIN     4   // todo: fixme
 #define BASE_AXIS_MIN -800     // todo: fixme
 #define BASE_AXIS_MAX  800     // todo: fixme
-#define BASE_COUNTS_AT_CENTER  300  // todo: fixme
+#define BASE_COUNTS_AT_CENTER  1800  // todo: fixme, just a guess
 
 // Shoulder Axis Constants
 #define SHOULDER_AXIS A3
-#define SHOULDER_AXIS_MIN -800     // actual limit is 70   //todo: use this
-#define SHOULDER_AXIS_MAX  800     // actual limit is TBD  //todo: use this
+#define SHOULDER_AXIS_MIN -800     // tenths
+#define SHOULDER_AXIS_MAX  800     // tenths
 #define SHOULDER_POSITIVE_PIN 8
 #define SHOULDER_NEGATIVE_PIN 9
 #define SHOULDER_COUNTS_AT_CENTER 764
@@ -34,8 +42,8 @@
 
 // Elbow Axis Constants
 #define ELBOW_AXIS A2
-#define ELBOW_AXIS_MIN  -1201      // about 90 degrees 
-#define ELBOW_AXIS_MAX   1201      // todo: setme
+#define ELBOW_AXIS_MIN  -1201      // tenths
+#define ELBOW_AXIS_MAX   1201      // tenths
 #define ELBOW_NEGATIVE_PIN 7
 #define ELBOW_POSITIVE_PIN 6
 #define ELBOW_COUNTS_AT_CENTER 497   
@@ -152,18 +160,30 @@ void serialEvent() {
   serial_protocol_data.print();
 }
 
+//-----------------------I2C RECEIVEEVENT-----------------------//
+// function that executes whenever data is received from master
+void receiveEvent(int howMany) {
+  uint8_t i = 0;
+  while (Wire.available() > 0) { // loop through all bytes
+    serial_buffer[i++] = Wire.read(); // read bytes into the serial buffer
+  }
+  serial_protocol_data.update(serial_buffer);
+  serial_protocol_data.print();
+}
+
 //-----------------------SETUP-----------------------//
 void setup() {
   // Config Serial Port and signify life
   Serial.begin(115200);
   Serial.println(F("Starting..."));
-  delay(100);
   Serial.println(F("Initializing Axis 0...(shoulder)"));
-  delay(100);
+
+  Wire.begin(I2C_SLAVE_ADDRESS);           // join i2c bus with address #8
+  Wire.onReceive(receiveEvent);            // register event
 
   // move shoulder to zero and check for success;
   base = (ArmAxis *)(new StepperAxis(0, //default position, tenths deg
-                                           BASE_AXIS,    // analog input pin
+                                           BASE_SENSOR,    // limit switch pin
                                            BASE_STEP_PIN,     // moves feedback in the positive direction
                                            BASE_DIR_PIN,     // moves feedback in the negative direction
                                            BASE_AXIS_MAX,                       // max position tenths of degrees from center

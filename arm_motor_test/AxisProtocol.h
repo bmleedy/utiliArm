@@ -1,14 +1,13 @@
 #ifndef INC_AXISPROTOCOL
 #define INC_AXISPROTOCOL
 
-#define SERIAL_BUFFER_LENGTH        60   // bytes
-#define SERIAL_READ_TIMEOUT  10          // ms, should take no more than 5ms
 #define SERIAL_MESSAGE_START_CHAR        '#'
 #define SERIAL_MESSAGE_TERMINATION_CHAR  '!'
 #define SERIAL_MESSAGE_SPECIAL_CHECKSUM  '_'
 #define SERIAL_MESSAGE_AXIS_SEPARATOR    '|'
 #define SERIAL_MESSAGE_FIELD_SEPARATOR   ','
 #define NUM_AXES 5
+#define SERIAL_BUFFER_LENGTH        60   // bytes
 
 // #___,___|___,___|___,___|___,___|___,___|<8bitchecksum>!
 // #rot_1,rate2|rot_2,rate2|.......|<8bitchecksum>!

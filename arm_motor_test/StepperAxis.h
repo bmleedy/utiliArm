@@ -18,17 +18,20 @@ class StepperAxis : public ArmAxis
             uint8_t dir_pin     ,       // digital output for step direction
             int16_t max_position,     // max position (tenths)
             int16_t zero_counts,       // what counts equals zero position for the axis
-            int16_t min_position);    // min position (tenths)
+            int16_t min_position,     // min position (tenths)
+            bool analog_position=true);    // true = counts come from analog, false, use limit switch
   bool run_axis();
 
   private: 
-  uint8_t potentiometer_pin;   // analog input pin
+  uint8_t sensor_pin;   // analog input pin
   uint8_t step_pin;    // pulse for one step
   uint8_t dir_pin;     // set direction of motion
   int16_t zero_counts;  //
 
-  uint32_t last_step_us;  //micros() output from last step by the controller
-  uint8_t last_step_pin_state=LOW;
+  uint32_t last_step_us=0;  //micros() output from last step by the controller
+  int16_t  step_counts=0;
+  uint8_t  last_step_pin_state=LOW;
+  bool analog_position = true;
 
   StepperStatus status;
   
@@ -36,6 +39,7 @@ class StepperAxis : public ArmAxis
   int16_t read_rate();  
   int16_t read_position();
   void move_constant_velocity(int8_t direction);
+  void init_position();
 
   void print();
 };
