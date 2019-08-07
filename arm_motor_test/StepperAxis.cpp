@@ -4,9 +4,9 @@
 
 // 60r/1min * 1min/60s * 200 counts/1r = 200 counts/s = 0.005 s/count = 5 msec/ct = 5000 usec/ct
 // We want to time half-steps, so ... halfstep_period is 2500 usec/halfstep
-#define STEPPER_MICROS_PER_HALFSTEP  2500  //60 rpm (can change eventually)
-#define STEPPER_ANALOG_COUNTS_PER_DEGREE 4  //todo: measure real number
-#define STEPPER_STEPS_PER_DEGREE         20   //todo: measure real number
+#define STEPPER_MICROS_PER_HALFSTEP   2500     //60 rpm (can change eventually)
+#define STEPPER_ANALOG_COUNTS_PER_DEGREE  4    //todo: measure real number
+#define STEPPER_STEPS_PER_DEGREE         20    //measured = 1750 steps per 90 deg = 19.4444...
 
 StepperAxis::StepperAxis(int16_t default_position,  // default position
                         uint8_t sensor_pin,         // potentiometer(analog) or limit switch digital for analog_position = false
@@ -41,9 +41,11 @@ StepperAxis::StepperAxis(int16_t default_position,  // default position
   this->zero_counts = zero_counts;
 
   this->init_position();
+  this->desired_position = default_position;
 }
 
 bool StepperAxis::zero_energy() {
+  Serial.println("zeroing");
   digitalWrite(this->step_pin, LOW);
   digitalWrite(this->dir_pin, LOW);
   return true;
@@ -72,12 +74,10 @@ int16_t StepperAxis::read_position(){
 void StepperAxis::init_position(){
   if(this->analog_position)  // not relevant for potentiometer mode
     return;
-
   // move backward till I hit limit switch
   do{
     this->move_constant_velocity(-1);  
-  } while(digitalRead(this->sensor_pin));
-
+  } while(digitalRead(this->sensor_pin)==HIGH);
   this->step_counts = 0;
   return;
 }
@@ -101,6 +101,7 @@ void StepperAxis::move_constant_velocity(int8_t direction){
   else
     digitalWrite(this->dir_pin, LOW);
 
+
   // Take a step, if it's time
   if(delta_us > STEPPER_MICROS_PER_HALFSTEP){
     if(last_step_pin_state == LOW){
@@ -120,11 +121,11 @@ bool StepperAxis::run_axis(){
 
   // Measure Rate
   this->read_rate();
-
+  Serial.println("running");
   // Calculate delta-to-goal
   this->read_position();
   int16_t delta_pos = this->desired_position - this->current_position;
-
+  Serial.println(delta_pos);
 
   // Check deadband and set desired velocity
   if(abs(delta_pos) <= this->position_deadband){

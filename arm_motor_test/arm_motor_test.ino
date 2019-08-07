@@ -7,15 +7,16 @@
 #include "Wire.h"   // ~120 bytes of dynamic memory
 
 // https://www.arduino.cc/en/Tutorial/MasterWriter
-//todo: MECHANICAL  add zero hashmarks indicators on all joints and adaptors
+//todo: MECHANICAL  add zero hashmarks and calibration indicators on all joints and adaptors
 //todo: MECHANICAL  add holes for flange (in addition to existing holes)
 //todo: MECHANICAL  add slots/holes for installing the flange
 //todo: ELECTRICAL  add buttons (rocker switch) to manually move the arm axes
 //todo: ELECTRICAL  add a killswitch to stop motion on the big axes
 //todo: MECHANICAL  strengthen feet areas from cracking
-//todo: MECHANICAL  "bed" the shaft attachment to secure it
-//todo: MECHANICAl  widen screwdriver holes for bet
-//todo: MECHANICAL  make room for washers in feet
+//todo: MECHANICAL  add second calibration position at center
+//todo: Lint code
+//todo: doxygen code
+//todo: test base code
 
 #define SERIAL_READ_TIMEOUT         10   // ms, should take no more than 5ms
 
@@ -23,12 +24,14 @@
 #define I2C_SDA_PIN    A4  // data pin
 #define I2C_SLAVE_ADDRESS 8
 
-#define BASE_SENSOR     12 
-#define BASE_STEP_PIN   11   // todo: fixme
-#define BASE_DIR_PIN     4   // todo: fixme
-#define BASE_AXIS_MIN -800     // todo: fixme
-#define BASE_AXIS_MAX  800     // todo: fixme
-#define BASE_COUNTS_AT_CENTER  1800  // todo: fixme, just a guess
+#define BASE_SENSOR     4 
+#define BASE_STEP_PIN   13   // todo: fixme
+#define BASE_DIR_PIN     12   // todo: fixme
+//#define BASE_ENA_PIN    XX
+#define BASE_AXIS_MIN  -600     // todo: fixme
+#define BASE_AXIS_MAX  1200     // todo: fixme
+#define BASE_COUNTS_AT_CENTER  1050  // tested.
+#define BASE_DEFAULT_POSITION 300
 
 // Shoulder Axis Constants
 #define SHOULDER_AXIS A3
@@ -176,20 +179,38 @@ void setup() {
   // Config Serial Port and signify life
   Serial.begin(115200);
   Serial.println(F("Starting..."));
-  Serial.println(F("Initializing Axis 0...(shoulder)"));
+
+  Serial.println(F("Initializing storage reader..."));
+  storage = new RoutineStorage(false);
+
+  Serial.print(F("Routine to follow: [")); Serial.print(storage->get_num_records());Serial.println("]");
+  int i = 0;
+  pose read_position;
+  while(storage->get_next_record(&read_position) <= NUM_TESTPOSES){
+    storage->dump_pose(&read_position, ++i);
+  }
+  storage->reset();
+  storage->set_wrap(true);
+
+  
+  Serial.println(F("Initializing I2C...(base)"));
 
   Wire.begin(I2C_SLAVE_ADDRESS);           // join i2c bus with address #8
   Wire.onReceive(receiveEvent);            // register event
 
+  Serial.println(F("Initializing Axis 0...(base)"));
+
   // move shoulder to zero and check for success;
-  base = (ArmAxis *)(new StepperAxis(0, //default position, tenths deg
+  base = (ArmAxis *)(new StepperAxis(BASE_DEFAULT_POSITION, //default position, tenths deg
                                            BASE_SENSOR,    // limit switch pin
                                            BASE_STEP_PIN,     // moves feedback in the positive direction
                                            BASE_DIR_PIN,     // moves feedback in the negative direction
                                            BASE_AXIS_MAX,                       // max position tenths of degrees from center
                                            BASE_COUNTS_AT_CENTER, // raw feedback position at center (zero angle)
-                                           BASE_AXIS_MIN));                     // min position, tenths of degrees from center
-                                           
+                                           BASE_AXIS_MIN, false));                     // min position, tenths of degrees from center
+  
+  Serial.println(F("Initializing Axis 0.5...(shoulder)"));
+
   // move shoulder to zero and check for success;
   shoulder = (ArmAxis *)(new GearmotorAxis(0, //default position, tenths deg
                                            SHOULDER_AXIS,    // analog input pin
@@ -227,24 +248,11 @@ void setup() {
                                          CLAW_AXIS_COUNTS_AT_CENTER,     // what servo angle is zero angle for the joint
                                          CLAW_AXIS_MIN));  
                                          
-  Serial.println(F("Initializing storage reader..."));
-  storage = new RoutineStorage(false);
-  
   Serial.println(F("Initialization Comlete!"));
-
-  Serial.print(F("Routine to follow: [")); Serial.print(storage->get_num_records());Serial.println("]");
-  int i = 0;
-  pose read_position;
-  while(storage->get_next_record(&read_position) <= NUM_TESTPOSES){
-    storage->dump_pose(&read_position, ++i);
-  }
-  storage->reset();
-  storage->set_wrap(true);
-  
 }
 
 
-//-----------------------SETUP-----------------------//
+//-----------------------LOOP-----------------------//
 #define PRINT_EVERY_MS 1000 //ms
 unsigned long last_print_ms = 0;
 unsigned long last_print_micros = 0;
@@ -267,6 +275,7 @@ void loop(){
       wrist_bend->set_desired_position( read_position.axis_pos[2]);
       wrist_rot->set_desired_position(  read_position.axis_pos[3]);
       claw->set_desired_position(       read_position.axis_pos[4]);
+      base->set_desired_position(       read_position.axis_pos[5]);
       auto_timeout = millis() + read_position.duration_ms;  //note, ignoring overflow here :-S
     }
   } else {
@@ -277,6 +286,7 @@ void loop(){
       wrist_bend->set_desired_position(serial_protocol_data.get_axis(2).position * 10);
       wrist_rot->set_desired_position(serial_protocol_data.get_axis(3).position * 10);
       claw->set_desired_position(serial_protocol_data.get_axis(4).position * 10);
+      base->set_desired_position(serial_protocol_data.get_axis(5).position * 10);
       last_command_serial = serial_protocol_data.get_last_serial();
       Serial.print(F("Following command number "));Serial.println(last_command_serial);
     }

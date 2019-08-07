@@ -6,13 +6,13 @@
 #define SERIAL_MESSAGE_SPECIAL_CHECKSUM  '_'
 #define SERIAL_MESSAGE_AXIS_SEPARATOR    '|'
 #define SERIAL_MESSAGE_FIELD_SEPARATOR   ','
-#define NUM_AXES 5
-#define SERIAL_BUFFER_LENGTH        60   // bytes
+#define NUM_AXES 6
+#define SERIAL_BUFFER_LENGTH        70   // bytes
 
 // #___,___|___,___|___,___|___,___|___,___|<8bitchecksum>!
 // #rot_1,rate2|rot_2,rate2|.......|<8bitchecksum>!
-// #111,222|333,444|555,666|777,888|999,000|_!
-// #000,000|000,000|000,000|000,000|000,000|_!
+// #111,122|133,144|155,166|177,188|199,200|211,222|_!
+// #000,000|000,000|000,000|000,000|000,000|000,000|_!
 
 struct axis_field{
   int16_t position = 0;   // 1/10 deg
@@ -104,7 +104,9 @@ class AxisProtocol{
               serial_buffer[28] != SERIAL_MESSAGE_FIELD_SEPARATOR &&
               serial_buffer[32] != SERIAL_MESSAGE_AXIS_SEPARATOR &&
               serial_buffer[36] != SERIAL_MESSAGE_FIELD_SEPARATOR &&
-              serial_buffer[40] != SERIAL_MESSAGE_AXIS_SEPARATOR) {
+              serial_buffer[40] != SERIAL_MESSAGE_AXIS_SEPARATOR && 
+              serial_buffer[44] != SERIAL_MESSAGE_FIELD_SEPARATOR &&
+              serial_buffer[48] != SERIAL_MESSAGE_AXIS_SEPARATOR) {
       Serial.println(F("serialEvent() WARNING - separator format mismatch."));
       serial_buffer[42] = '\0';
       Serial.println(serial_buffer);
