@@ -24,9 +24,9 @@ class AxisProtocol{
   axis_field protocol_data[NUM_AXES];
   uint16_t received_serial = 0;
 
-  void dump_serial_buffer(char * serial_buffer){
+  void dump_serial_buffer(char * serial_buffer) {
     Serial.print(F("buffer: ["));
-    for(int i=0; i<SERIAL_BUFFER_LENGTH; i++){
+    for(int i=0; i<SERIAL_BUFFER_LENGTH; i++) {
       Serial.print(serial_buffer[i]);
     }
     Serial.println("]");
@@ -36,31 +36,31 @@ class AxisProtocol{
                            uint16_t output_array_len, 
                            char * buffer, 
                            uint16_t start_index=1, 
-                           uint16_t width = 4){
-    for(int i=0; i<output_array_len; i++){
+                           uint16_t width = 4) {
+    for(int i=0; i<output_array_len; i++) {
       buffer[start_index + i*width + width -1] = '\0';
       output_array[i] = atoi(buffer + start_index + i*width);
     }
   }
   
-  bool is_bad_checksum(char * buffer, uint8_t checksum_index){
-    if( buffer[checksum_index] == SERIAL_MESSAGE_SPECIAL_CHECKSUM)
+  bool is_bad_checksum(char * buffer, uint8_t checksum_index) {
+    if ( buffer[checksum_index] == SERIAL_MESSAGE_SPECIAL_CHECKSUM)
       return false; // bypass check for this special sum. (yes, opens another collision)
     
     uint8_t sum = 0;
-    for(int i = 0; i < checksum_index; i++){
+    for(int i = 0; i < checksum_index; i++) {
       sum += buffer[i];
     }
     
-    if(sum != buffer[checksum_index]){
+    if (sum != buffer[checksum_index]) {
       Serial.print(F("WARNING: Checksum expected [")); Serial.print(buffer[checksum_index]);
       Serial.print(F("] But received: [")); Serial.print(sum);
       Serial.println(F("] !"));
     }
   }
   
-  void store_fields(int16_t source_data[]){
-    for(int i = 0; i<NUM_AXES; i++){
+  void store_fields(int16_t source_data[]) {
+    for(int i = 0; i<NUM_AXES; i++) {
       this->protocol_data[i].position = source_data[2*i];
       this->protocol_data[i].rate = source_data[2*i+1];
     }
@@ -69,9 +69,9 @@ class AxisProtocol{
 
   public:
   
-  void print(){
+  void print() {
     Serial.println(F("Axis Protocol Data:"));
-    for(int i=0; i<NUM_AXES; i++){
+    for(int i=0; i<NUM_AXES; i++) {
       Serial.print(F("  Axis["));Serial.print(i);Serial.print(F("] pos["));
       Serial.print(this->protocol_data[i].position);Serial.print(F("] rate["));
       Serial.print(this->protocol_data[i].rate);Serial.println(F("]"));
@@ -79,23 +79,23 @@ class AxisProtocol{
     Serial.print(F("  Serial: ")); Serial.println(this->get_last_serial());
   }
   
-  uint16_t get_last_serial(){return this->received_serial;}
+  uint16_t get_last_serial() {return this->received_serial;}
   
-  axis_field get_axis(uint8_t axis_num){return protocol_data[axis_num];}
+  axis_field get_axis(uint8_t axis_num) {return protocol_data[axis_num];}
 
-  void update(char * serial_buffer){
+  void update(char * serial_buffer) {
     int16_t axis_field_protocol_data[NUM_AXES*2];
   
     // Check the data (starter, terminator, checksum)  todo: put all of these checks into the protocol class.
-    if( !(serial_buffer[0] == '#') ){
+    if ( !(serial_buffer[0] == '#') ) {
       Serial.print(F("serialEvent() WARNING - no # found at start of serial message. Found: "));
       Serial.println(serial_buffer[0]);
       dump_serial_buffer(serial_buffer);
       return;
-    } else if( is_bad_checksum(serial_buffer, 41 )){
+    } else if ( is_bad_checksum(serial_buffer, 41 )) {
       Serial.println(F("serialEvent() WARNING - bad checksum."));
       return;
-    } else if(serial_buffer[ 4] != SERIAL_MESSAGE_FIELD_SEPARATOR &&  //yes, I could have done this with a loop.
+    } else if (serial_buffer[ 4] != SERIAL_MESSAGE_FIELD_SEPARATOR &&  //yes, I could have done this with a loop.
               serial_buffer[ 8] != SERIAL_MESSAGE_AXIS_SEPARATOR &&
               serial_buffer[12] != SERIAL_MESSAGE_FIELD_SEPARATOR &&
               serial_buffer[16] != SERIAL_MESSAGE_AXIS_SEPARATOR &&

@@ -67,9 +67,9 @@ class ArmAxis{
   bool set_desired_position(int16_t position_deg_tenths, int16_t rate_tenths_per_sec);
   bool set_position_deadband(int16_t deadband_deg_tenths);
   // Getters
-  uint16_t get_position(){return this->read_position();}
-  uint16_t get_rate(){return this->read_rate();}
-  bool is_enabled(){return this->enabled;}
+  uint16_t get_position() {return this->read_position();}
+  uint16_t get_rate() {return this->read_rate();}
+  bool is_enabled() {return this->enabled;}
   uint16_t get_disabled_reason();
   // Loop  False = error, the axis has disabled itself for safety
   bool run();

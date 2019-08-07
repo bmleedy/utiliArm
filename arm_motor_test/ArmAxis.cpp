@@ -1,9 +1,9 @@
 #include "ArmAxis.h"
 #include "Arduino.h"
 
-bool ArmAxis::set_max_position(int16_t pos){
-  //Serial.print("Setting max pos to");Serial.println(pos);
-  if((pos <= 1800) && (pos >= -1800)){
+bool ArmAxis::set_max_position(int16_t pos) {
+  // Serial.print("Setting max pos to");Serial.println(pos);
+  if ((pos <= 1800) && (pos >= -1800)) {
     this->max_position = pos;
     return true;
   } else {
@@ -12,9 +12,8 @@ bool ArmAxis::set_max_position(int16_t pos){
   }
 }
 
-bool ArmAxis::set_min_position(int16_t pos){
-  //Serial.print("Setting min pos to");Serial.println(pos);
-  if((pos <= 1800) && (pos >= -1800)){
+bool ArmAxis::set_min_position(int16_t pos) {
+  if ((pos <= 1800) && (pos >= -1800)) {
     this->min_position = pos;
     return true;
   } else {
@@ -23,24 +22,27 @@ bool ArmAxis::set_min_position(int16_t pos){
   }
 }
 
-ArmAxis::ArmAxis(int16_t max_position, int16_t min_position, int16_t default_position, int16_t max_rate){
+ArmAxis::ArmAxis(int16_t max_position,
+                int16_t min_position,
+                int16_t default_position,
+                int16_t max_rate) {
   this->max_rate = max_rate;
   bool success = true;
   success &= this->set_desired_position(default_position);
   success &= this->set_max_position(max_position);
   success &= this->set_min_position(min_position);
-  if(success)
+  if (success)
     this->enabled = true;
   else
     Serial.println(F("ArmAxis constructor failed!!"));
 }
 
 // Setters  False = failure / illegal operation
-bool ArmAxis::set_desired_position(int16_t position_deg_tenths){
+bool ArmAxis::set_desired_position(int16_t position_deg_tenths) {
   // Sanity check input
-  if(position_deg_tenths > this->max_position) {
+  if (position_deg_tenths > this->max_position) {
     this->disable_axis(REASON_POS_TOO_HIGH);
-  } else if(position_deg_tenths < this->min_position) {
+  } else if (position_deg_tenths < this->min_position) {
     this->disable_axis(REASON_POS_TOO_LOW);
   } else {
     desired_position = position_deg_tenths;
@@ -49,18 +51,18 @@ bool ArmAxis::set_desired_position(int16_t position_deg_tenths){
   return false;
 }
 
-bool ArmAxis::set_desired_position(int16_t position_deg_tenths, 
+bool ArmAxis::set_desired_position(int16_t position_deg_tenths,
                                   int16_t rate_tenths_per_sec) {
-  return set_max_rate(rate_tenths_per_sec) && 
+  return set_max_rate(rate_tenths_per_sec) &&
          set_desired_position(rate_tenths_per_sec);
 }
 
-bool ArmAxis::set_max_rate(int16_t max_rate){
+bool ArmAxis::set_max_rate(int16_t max_rate) {
   // Sanity check input
-  if(max_rate < 0) {
+  if (max_rate < 0) {
     this->disable_axis(REASON_NEGATIVE_RATE);
     return false;
-  } else if(!this->rate_enabled) {
+  } else if (!this->rate_enabled) {
     this->disable_axis(REASON_RATE_DISABLED);
     return false;
   } else {
@@ -69,10 +71,10 @@ bool ArmAxis::set_max_rate(int16_t max_rate){
   }
 }
 
-bool ArmAxis::set_position_deadband(int16_t deadband_deg_tenths){
-  if(deadband_deg_tenths > POSITION_DEADBAND_MAX) {
+bool ArmAxis::set_position_deadband(int16_t deadband_deg_tenths) {
+  if (deadband_deg_tenths > POSITION_DEADBAND_MAX) {
     this->disable_axis(REASON_DEADBAND_TOO_HIGH);
-  } else if(deadband_deg_tenths < POSITION_DEADBAND_MIN) {
+  } else if (deadband_deg_tenths < POSITION_DEADBAND_MIN) {
     this->disable_axis(REASON_DEADBAND_TOO_LOW);
   } else {
     this->position_deadband = deadband_deg_tenths;
@@ -86,28 +88,29 @@ bool ArmAxis::pid_init(int16_t pgain, int16_t igain, int16_t dgain,
   return false;
 }
 
-bool ArmAxis::disable_axis(uint16_t reason){
-  this->enabled = false; 
+bool ArmAxis::disable_axis(uint16_t reason) {
+  this->enabled = false;
   this->disabled_reason |= reason;
   return this->zero_energy();
 }  // go to the safest possible state
 
-uint16_t ArmAxis::get_disabled_reason(){
+uint16_t ArmAxis::get_disabled_reason() {
   return this->disabled_reason;
 }
 
 bool ArmAxis::stop_axis() {
-  if(this->set_desired_position(this->read_position())){ // desire be here
-    return true;  //set bits immediately
+  if (this->set_desired_position(this->read_position())) {  // desire be here
+    return true;  // set bits immediately
   } else {
     this->disable_axis(REASON_STOP_FAILED);
     return false;
   }
-  // NOTE: we expect run_axis() to continue to run after this call to hold axis in place.
+  // NOTE: we expect run_axis() to continue to
+  // run after this call to hold axis in place.
 }
 
 bool ArmAxis::run() {
-  if(this->enabled){
+  if (this->enabled) {
     return this->run_axis();  // close all loops here
   } else {
     this->zero_energy();      // zero energy state if disabled

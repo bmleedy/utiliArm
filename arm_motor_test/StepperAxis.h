@@ -4,7 +4,7 @@
 #include "ArmAxis.h"
 #include "Arduino.h"
 
-struct StepperStatus{
+struct StepperStatus {
   int8_t direction = 0;     // -1 negative, 0 stop, 1 positive
   int16_t raw_counts = 0;   // raw A to D counts
 };
