@@ -98,7 +98,7 @@ class RoutineStorage{
   bool wrap;
 
  public:
-  RoutineStorage(bool wrap = true) {
+  explicit RoutineStorage(bool wrap = true) {
     EEPROM.get(current_pointer, num_records);
     current_pointer += sizeof(num_records);
     record_storage_start = current_pointer;
